@@ -50,7 +50,11 @@ export function CartClient({ canOrder }: { canOrder: boolean }) {
       <Empty
         title="Your cart is empty"
         body="Open Shop, add products, then place the order here."
-      />
+      >
+        <Button href="/app/clinic/catalog" className="mt-4 min-h-tap">
+          Shop
+        </Button>
+      </Empty>
     );
   }
 

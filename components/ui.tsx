@@ -119,11 +119,20 @@ export function Field({
 export const inputClass =
   "w-full rounded-xl border border-navy-900/15 bg-white px-3 py-2 text-sm outline-none ring-teal-600/30 focus:ring-2";
 
-export function Empty({ title, body }: { title: string; body?: string }) {
+export function Empty({
+  title,
+  body,
+  children,
+}: {
+  title: string;
+  body?: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="rounded-2xl border border-dashed border-navy-900/15 bg-white/60 px-6 py-12 text-center">
       <p className="font-medium text-navy-900">{title}</p>
       {body && <p className="mt-1 text-sm text-navy-800/60">{body}</p>}
+      {children}
     </div>
   );
 }

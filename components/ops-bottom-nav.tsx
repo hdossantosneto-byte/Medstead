@@ -7,7 +7,7 @@ import { clsx } from "@/lib/format";
 const TABS = [
   { href: "/app/ops", label: "Home", match: (p: string) => p === "/app/ops" },
   { href: "/app", label: "Next", match: (p: string) => p === "/app" },
-  { href: "/app/ops/orders", label: "Orders", match: (p: string) => p.startsWith("/app/ops/orders") },
+  { href: "/app/orders", label: "Orders", match: (p: string) => p === "/app/orders" || p.startsWith("/app/ops/orders") },
   { href: "/app/ops/packages", label: "Packages", match: (p: string) => p.startsWith("/app/ops/packages") || p.startsWith("/app/ops/shipping") },
   { href: "/app/ops/more", label: "More", match: (p: string) => p.startsWith("/app/ops/more") || p.startsWith("/app/flights") || p.startsWith("/app/ops/inventory") || p.startsWith("/app/ops/compliance") || p.startsWith("/app/ops/catalog") },
 ];

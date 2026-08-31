@@ -24,7 +24,7 @@ export default async function OpsOrdersPage() {
       <PageHeader
         eyebrow="Orders"
         title="Pick / pack"
-        lede="Clinic and freight jobs the warehouse must move. Line values and invoice totals are hidden."
+        lede="Clinic and freight jobs the warehouse must move. Combined Orders & Packages lives at /app/orders. Line values stay hidden."
       />
       <div className="space-y-3">
         {orders.map((o) => {

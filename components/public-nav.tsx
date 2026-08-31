@@ -6,11 +6,9 @@ import { Wordmark } from "./brand";
 import { Button } from "./ui";
 
 const links = [
-  { href: "/orders", label: "Orders & Packages" },
   { href: "/freight", label: "Ship Now" },
   { href: "/track", label: "Track Package" },
-  { href: "/shop-and-ship", label: "Shop & Ship" },
-  { href: "/warehouse", label: "US warehouse" },
+  { href: "/orders", label: "Orders & Packages" },
   { href: "/contact", label: "Support" },
 ];
 

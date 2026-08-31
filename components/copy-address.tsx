@@ -14,10 +14,13 @@ export function CopyAddress({
   const [copied, setCopied] = useState(false);
   const block = [
     name || "Your name",
-    `${WAREHOUSE.name}${suite ? ` · Suite ${suite}` : ` · Unit ${WAREHOUSE.unit}`}`,
+    WAREHOUSE.name,
     WAREHOUSE.street,
     `${WAREHOUSE.city}, ${WAREHOUSE.state} ${WAREHOUSE.zip}`,
-  ].join("\n");
+    suite ? `Suite ${suite}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return (
     <Button
@@ -30,7 +33,7 @@ export function CopyAddress({
         setTimeout(() => setCopied(false), 2000);
       }}
     >
-      {copied ? "Copied" : "Copy address"}
+      {copied ? "Copied" : "Copy Address"}
     </Button>
   );
 }

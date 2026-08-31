@@ -23,7 +23,10 @@ export const metadata: Metadata = {
   },
   description: PUBLIC_LINE,
   keywords: ["MedStead", "clinic supply", "medical freight", TAGLINE],
-  icons: { icon: [{ url: "/medstead-logo.svg", type: "image/svg+xml" }, { url: "/favicon.svg" }] },
+  icons: {
+    icon: [{ url: "/medstead-logo.svg", type: "image/svg+xml" }, { url: "/favicon.svg" }],
+    apple: [{ url: "/medstead-logo.svg" }],
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

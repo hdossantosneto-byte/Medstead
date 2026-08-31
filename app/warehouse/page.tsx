@@ -31,10 +31,7 @@ export default async function WarehousePage() {
             <p className="mt-3 text-lg font-semibold text-navy-900">
               {user?.name ?? "Your name"}
             </p>
-            <p className="text-navy-800">
-              {WAREHOUSE.name}
-              {user?.warehouseCode ? ` · Suite ${user.warehouseCode}` : ` · Unit ${WAREHOUSE.unit}`}
-            </p>
+            <p className="text-navy-800">{WAREHOUSE.name}</p>
             <p className="mt-1 text-navy-800">{WAREHOUSE.street}</p>
             <p className="text-navy-800">
               {WAREHOUSE.city}, {WAREHOUSE.state} {WAREHOUSE.zip}

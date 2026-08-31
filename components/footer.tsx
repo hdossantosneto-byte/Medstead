@@ -85,6 +85,8 @@ export function Footer() {
         </Link>
         <span className="mx-2">·</span>
         MedStead · Markets in the USA and internationally
+        <span className="mx-2">·</span>
+        Add to Home Screen for phone ops and tracking
       </div>
       <PublicBottomNav />
     </footer>

@@ -28,7 +28,7 @@ export default function HomePage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Button href="/orders">Orders & Packages</Button>
           <Button href="/freight" variant="ghost">
-            + New order
+            Ship Now
           </Button>
           <Button href="/signup" variant="secondary">
             Sign up

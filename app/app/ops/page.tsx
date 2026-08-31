@@ -65,18 +65,18 @@ export default async function OpsHome() {
       {dispatchReady ? (
         <p className="mb-6 text-sm text-navy-800/60">
           Six gates are green. Dispatch is the only big button.{" "}
-          <Link href="/app/ops/orders" className="font-semibold text-forest-800">
+          <Link href="/app/orders#pick-pack" className="font-semibold text-forest-800">
             Orders
           </Link>
           {" · "}
-          <Link href="/app/ops/packages" className="font-semibold text-forest-800">
+          <Link href="/app/orders#packages" className="font-semibold text-forest-800">
             Packages
           </Link>
         </p>
       ) : (
         <div className="grid gap-3">
           <Link
-            href="/app/ops/orders"
+            href="/app/orders#pick-pack"
             className="flex min-h-[120px] flex-col justify-between rounded-3xl bg-navy-900 p-6 text-white"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">
@@ -86,7 +86,7 @@ export default async function OpsHome() {
             <p className="text-sm text-white/70">{orders} open clinic + freight jobs</p>
           </Link>
           <Link
-            href="/app/ops/packages"
+            href="/app/orders#packages"
             className="flex min-h-[120px] flex-col justify-between rounded-3xl bg-forest-600 p-6 text-white"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/80">

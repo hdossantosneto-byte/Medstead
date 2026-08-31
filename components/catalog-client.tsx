@@ -263,6 +263,9 @@ export function CatalogClient({
             <p className="text-xs text-navy-800/50">{items.length} in cart</p>
             <p className="font-semibold text-navy-900">{money(cartTotal)}</p>
           </button>
+          <Button href="/cart" variant="ghost" className="min-h-12">
+            Cart
+          </Button>
           <Button className="min-h-12 flex-1" disabled={!items.length || busy} onClick={submit}>
             {busy ? "Submitting…" : "Place order"}
           </Button>

@@ -24,13 +24,13 @@ export const PAY_METHOD_ZELLE = "Zelle · Chase ••9696 · MEDSTEAD LLC";
 export const ADP_BANNER = "ADP setup — not live. Pay is Zelle until ADP is live.";
 
 export const WAREHOUSE = {
-  name: "WareSpace — MedStead",
+  name: "WareSpace – MedStead",
   unit: "C15",
-  street: "700 NW 57th Ct",
+  street: "700 NW 57th Ct, Unit C15",
   city: "Fort Lauderdale",
   state: "FL",
   zip: "33309",
-  line: "WareSpace C15, 700 NW 57th Ct, Fort Lauderdale, FL 33309",
+  line: "WareSpace – MedStead, 700 NW 57th Ct, Unit C15, Fort Lauderdale, FL 33309",
 };
 
 export const HUBS = {

@@ -5,8 +5,17 @@ import { Card, PageHeader } from "@/components/ui";
 
 const PRESETS: Record<string, string> = {
   "360": "360 Wellness",
+  "360-wellness": "360 Wellness",
+  "360wellness": "360 Wellness",
+  wellness: "360 Wellness",
+  barbados: "360 Wellness",
   demo: "New clinic",
+  invite: "New clinic",
   pharmacy: "Pharmacy partner",
+  "pharmacy-partner": "Pharmacy partner",
+  bethel: "Bethel Medical",
+  harbor: "Harbor Wellness",
+  rolle: "Rolle Family Practice",
 };
 
 export const metadata = { title: "Clinic invite" };
@@ -20,7 +29,7 @@ export default function ClinicSignupPage({ params }: { params: { token: string }
         <PageHeader
           eyebrow="Clinic invite"
           title={preset ?? "Join MedStead"}
-          lede="Seats stay inactive until Clint approves. This is not a consumer pharmacy shop."
+          lede="Invite landing for pharmacies and clinics Clint already sent. Seats stay inactive until a MedStead admin approves. This is not a consumer pharmacy shop."
         />
         <Card className="p-6">
           <ClinicInviteForm token={params.token} presetName={preset} />

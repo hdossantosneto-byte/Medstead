@@ -9,12 +9,12 @@ export default async function OpsMorePage() {
   const links = del
     ? [
         { href: "/app/flights", title: "Dispatch flight", body: "FLL–NAS, FLL–FPO. Mexico / MSY not live yet." },
-        { href: "/app/ops/orders", title: "Orders", body: "Clinic and freight pick lists." },
+        { href: "/app/orders", title: "Orders & Packages", body: "Pick / pack and trackable packages." },
         { href: "/app/ops/compliance", title: "Six-gate release", body: "All green before dispatch." },
         { href: "/app/ops/inventory", title: "Inventory", body: "WareSpace C15 on-hand counts." },
       ]
     : [
-        { href: "/app/ops/orders", title: "Orders", body: "Confirm and verify pick / pack." },
+        { href: "/app/orders", title: "Orders & Packages", body: "Pick / pack and trackable packages." },
         { href: "/app/ops/packages", title: "Packages", body: "Receive at C15 and track." },
         { href: "/app/ops/compliance", title: "Six-gate release", body: "All green before Del flies." },
         { href: "/app/ops/inventory", title: "Inventory", body: "WareSpace C15 on-hand counts." },
