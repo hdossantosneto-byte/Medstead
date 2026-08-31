@@ -7,6 +7,7 @@ import {
   GATE_ORDER,
   SHIPMENT_LABEL,
 } from "./constants";
+import { isDel } from "./org";
 import { prisma } from "./prisma";
 
 export type QueueKind =
@@ -71,6 +72,8 @@ function nextOpsGate(gates: Array<{ name: GateName; state: string }>) {
 
 export async function loadQueue(user: {
   id: string;
+  email?: string;
+  name?: string;
   role: Role;
   clinicId: string | null;
   clinic: { id: string; name: string; approved: boolean } | null;
@@ -512,15 +515,22 @@ export async function loadQueue(user: {
       }
     }
 
-    const first = ["dispatch_flight", "set_delivery_date", "freeze_manifest", "go_no_go"];
-    items.sort((a, b) => {
-      const ap = first.indexOf(a.kind);
-      const bp = first.indexOf(b.kind);
-      if (ap === -1 && bp === -1) return 0;
-      if (ap === -1) return 1;
-      if (bp === -1) return -1;
-      return ap - bp;
-    });
+    const delOnly = new Set(["dispatch_flight", "set_delivery_date", "freeze_manifest", "go_no_go"]);
+    if (isDel(user)) {
+      const first = ["dispatch_flight", "set_delivery_date", "freeze_manifest", "go_no_go"];
+      items.sort((a, b) => {
+        const ap = first.indexOf(a.kind);
+        const bp = first.indexOf(b.kind);
+        if (ap === -1 && bp === -1) return 0;
+        if (ap === -1) return 1;
+        if (bp === -1) return -1;
+        return ap - bp;
+      });
+    } else {
+      for (let i = items.length - 1; i >= 0; i -= 1) {
+        if (delOnly.has(items[i].kind)) items.splice(i, 1);
+      }
+    }
   }
 
   if (CLINIC_ROLES.includes(user.role)) {

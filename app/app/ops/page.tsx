@@ -2,12 +2,14 @@ import Link from "next/link";
 import { NextQueue } from "@/components/next-queue";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { GATE_ORDER, WAREHOUSE } from "@/lib/constants";
+import { isDel } from "@/lib/org";
 import { loadQueue } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 
 export default async function OpsHome() {
   const user = await requireRole(["OPS"]);
+  const del = isDel(user);
   const items = await loadQueue(user);
   const next = items[0];
   const [orders, packages, flights] = await Promise.all([
@@ -24,15 +26,34 @@ export default async function OpsHome() {
       s.gates.length < GATE_ORDER.length || s.gates.some((g) => g.state !== "GREEN"),
   ).length;
   const allGreen = waitingGates === 0;
-  const dispatchReady = next?.kind === "dispatch_flight" && allGreen;
+  const dispatchReady = del && next?.kind === "dispatch_flight" && allGreen;
 
   return (
     <div>
       <PageHeader
-        eyebrow="Fulfillment"
+        eyebrow={del ? "Del · flight ops" : "Warehouse"}
         title={`Hello, ${user.name.split(" ")[0]}`}
-        lede="Next job. Then pick, pack, ship, dispatch. Doctors do not block cargo."
+        lede={
+          del
+            ? "Dispatch first. Doctors do not block FLL–NAS / FLL–FPO cargo."
+            : "Pick, pack, and clear gates. Del owns dates and dispatch."
+        }
       />
+
+      {del && (
+        <Link
+          href="/app/flights"
+          className="mb-4 flex min-h-[140px] flex-col justify-between rounded-3xl border-2 border-navy-900 bg-navy-900 p-6 text-white"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">
+            Dispatch / flights
+          </p>
+          <p className="font-display text-4xl">Dispatch flight</p>
+          <p className="text-sm text-white/70">
+            {flights} live flight-days · Mexico and MSY labeled, not live
+          </p>
+        </Link>
+      )}
 
       <div className="mb-6">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
@@ -43,7 +64,7 @@ export default async function OpsHome() {
 
       {dispatchReady ? (
         <p className="mb-6 text-sm text-navy-800/60">
-          Six gates are green. Dispatch is the only action.{" "}
+          Six gates are green. Dispatch is the only big button.{" "}
           <Link href="/app/ops/orders" className="font-semibold text-forest-800">
             Orders
           </Link>
@@ -74,20 +95,6 @@ export default async function OpsHome() {
             <p className="font-display text-4xl">Packages</p>
             <p className="text-sm text-white/80">{packages} trackable packages</p>
           </Link>
-          {next?.kind !== "dispatch_flight" && (
-            <Link
-              href="/app/flights"
-              className="flex min-h-[120px] flex-col justify-between rounded-3xl border-2 border-navy-900 bg-white p-6"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
-                Del
-              </p>
-              <p className="font-display text-4xl text-navy-900">Dispatch flight</p>
-              <p className="text-sm text-navy-800/70">
-                {flights} live flight-days · FLL–NAS / FLL–FPO
-              </p>
-            </Link>
-          )}
         </div>
       )}
 
@@ -100,7 +107,7 @@ export default async function OpsHome() {
             {allGreen ? "All green" : `${waitingGates} waiting`}
           </p>
           <p className="mt-1 text-sm text-navy-800/60">
-            All six green, then Dispatch is the only big button.
+            All six green before Del dispatches.
           </p>
         </Card>
         <Card className="p-5">
@@ -116,21 +123,15 @@ export default async function OpsHome() {
             After this · {items.length - 1} more
           </p>
           <NextQueue items={items.slice(1, 4)} />
-          {items.length > 4 && (
-            <p className="mt-3 text-sm">
-              <a href="/app" className="font-semibold text-forest-800">
-                See all {items.length} on Next
-              </a>
-            </p>
-          )}
         </div>
       )}
 
       <Card className="mt-6 p-5">
         <Badge tone="amber">Finance numbers hidden</Badge>
         <p className="mt-2 text-sm leading-6 text-navy-800/70">
-          Only Del dispatches FLL–NAS and FLL–FPO. Mexico and Gulf Coast / New Orleans are
-          corridor labels — not live yet.
+          {del
+            ? "Only you dispatch. Chris picks and packs. Finance cannot fly."
+            : "Del owns dates and Dispatch flight. You confirm/verify warehouse jobs."}
         </p>
       </Card>
     </div>

@@ -24,6 +24,7 @@ import { auth, requireRole, requireUser, clinicApproved } from "./session";
 import { nextShipmentCode } from "./shipment-id";
 import type { QueueKind } from "./queue";
 import { advanceClinicOrder, advanceShipment, ensureLinkedShipment } from "./handoff";
+import { isDel } from "./org";
 
 function revalidateApp() {
   revalidatePath("/app");
@@ -559,6 +560,7 @@ async function nextFlightCode(corridor: FlightCorridor) {
 
 export async function dispatchFlight(shipmentId: string) {
   const actor = await requireRole(["OPS"]);
+  if (!isDel(actor)) return { error: "Only Del dispatches flights. Warehouse ops pick and pack." };
   const shipment = await prisma.shipment.findUnique({
     where: { id: shipmentId },
     include: { gates: true, clinicOrder: { include: { invoice: true } }, flight: true },
@@ -623,6 +625,7 @@ export async function dispatchFlight(shipmentId: string) {
 
 export async function setFlightPhase(flightId: string, phase: FlightPhase, goNoGo?: string) {
   const actor = await requireRole(["OPS"]);
+  if (!isDel(actor)) return { error: "Only Del runs the flight-day board." };
   const flight = await prisma.flight.findUnique({ where: { id: flightId } });
   if (!flight) return { error: "Flight not found." };
   if (!flight.live) return { error: "This corridor is not live yet." };
@@ -851,6 +854,7 @@ export async function runNextAction(input: {
 
   if (input.kind === "set_delivery_date" && input.orderId) {
     const actor = await requireRole(["OPS"]);
+    if (!isDel(actor)) return { error: "Only Del confirms delivery dates." };
     if (!input.date) return { error: "Pick a delivery date. Del owns date promises." };
     const when = new Date(input.date);
     if (Number.isNaN(when.getTime())) return { error: "Invalid date." };

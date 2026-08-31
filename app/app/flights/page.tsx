@@ -1,6 +1,7 @@
 import { DedicatedNextButton } from "@/components/next-queue";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { AIRCRAFT_ROUTING, CORRIDOR_LABEL, CORRIDOR_LIVE, FLIGHT_PHASE_LABEL } from "@/lib/constants";
+import { isDel } from "@/lib/org";
 import { loadQueue } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
@@ -18,7 +19,8 @@ const PHASES = [
 ] as const;
 
 export default async function FlightsPage() {
-  const user = await requireRole(["OPS", "MEDSTEAD_ADMIN"]);
+  const user = await requireRole(["OPS"]);
+  const del = isDel(user);
   const queue = await loadQueue(user);
   const [flights, ready] = await Promise.all([
     prisma.flight.findMany({
@@ -49,7 +51,11 @@ export default async function FlightsPage() {
       <PageHeader
         eyebrow="Del"
         title="Dispatch flight"
-        lede="Doctors who placed the order do not block cargo. Finance cannot run this board. Public clock starts after release."
+        lede={
+          del
+            ? "Doctors who placed the order do not block cargo. Finance cannot run this board."
+            : "Del owns this board. Warehouse ops pick and pack — you cannot dispatch."
+        }
       />
 
       <div className="grid gap-3">
@@ -133,24 +139,19 @@ export default async function FlightsPage() {
                 <Badge tone="teal">{placedBy}</Badge>
                 {s.clinicOrder && <Badge>{s.clinicOrder.status.replaceAll("_", " ")}</Badge>}
               </div>
-              <div className="mt-5">
-                {next ? (
+              {del ? (
+                <div className="mt-5">
                   <DedicatedNextButton
                     kind="dispatch_flight"
                     label="Dispatch flight"
                     shipmentId={s.id}
                     orderId={s.clinicOrderId ?? undefined}
-                    flightId={s.flightId ?? undefined}
+                    flightId={next?.flightId ?? s.flightId ?? undefined}
                   />
-                ) : (
-                  <DedicatedNextButton
-                    kind="dispatch_flight"
-                    label="Dispatch flight"
-                    shipmentId={s.id}
-                    orderId={s.clinicOrderId ?? undefined}
-                  />
-                )}
-              </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-navy-800/60">Del taps Dispatch flight.</p>
+              )}
             </Card>
           );
         })}
@@ -172,7 +173,7 @@ export default async function FlightsPage() {
                   {f.goNoGo && <Badge tone={f.goNoGo === "GO" ? "green" : "red"}>{f.goNoGo}</Badge>}
                 </div>
                 {f.activityLine && <p className="mt-3 text-sm text-navy-800/70">{f.activityLine}</p>}
-                {next && next.kind !== "open" && (
+                {del && next && next.kind !== "open" && (
                   <div className="mt-4">
                     <DedicatedNextButton
                       kind={next.kind}

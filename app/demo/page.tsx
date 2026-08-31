@@ -41,12 +41,12 @@ const ACCOUNTS = [
   {
     email: "ops@medstead.demo",
     role: "Ops (Chris)",
-    note: "Warehouse pick / pack. No finance totals.",
+    note: "Warehouse pick / pack. Not flight dispatch.",
   },
   {
     email: "del@medstead.demo",
     role: "Del · ops",
-    note: "Delivery dates and Dispatch flight. Doctors do not block cargo.",
+    note: "Dispatch / flights first. Doctors do not block cargo.",
   },
   {
     email: "finance@medstead.demo",
