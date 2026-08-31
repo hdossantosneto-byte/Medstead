@@ -56,12 +56,14 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
       { href: "/app/travel", label: "Company travel" },
       { href: "/app/flights", label: "MTG Airlines" },
       { href: "/app/finance/payroll", label: "Payroll" },
+      { href: "/app/finance/payables", label: "Payables" },
       { href: "/app/finance/expenses", label: "Expenses" },
     );
   }
   if (role === "FINANCE") {
     base.push(
       { href: "/app/finance/payroll", label: "Payroll" },
+      { href: "/app/finance/payables", label: "Payables" },
       { href: "/app/finance/quotes", label: "Quotes" },
       { href: "/app/finance/expenses", label: "Expenses" },
       { href: "/app/finance/invoices", label: "Invoices" },

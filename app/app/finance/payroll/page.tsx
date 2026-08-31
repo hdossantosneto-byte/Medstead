@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/session";
 export default async function PayrollPage() {
   await requireRole(["FINANCE", "MEDSTEAD_ADMIN"]);
   const rows = await prisma.scheduledPay.findMany({
+    where: { invoiceNumber: null },
     include: { payee: true },
     orderBy: { dueAt: "asc" },
   });

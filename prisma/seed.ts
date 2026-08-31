@@ -1241,9 +1241,27 @@ async function main() {
     },
   });
 
+  const wayne = await prisma.payee.create({
+    data: { displayName: "Wayne" },
+  });
+  await prisma.scheduledPay.create({
+    data: {
+      payeeId: wayne.id,
+      payingEntity: PAYING_ENTITY,
+      amount: 5890,
+      currency: "USD",
+      dueAt: new Date("2026-08-28T12:00:00.000Z"),
+      method: PAY_METHOD_ZELLE,
+      status: "SCHEDULED",
+      recurring: false,
+      invoiceNumber: "MS-2026-0828-W",
+      note: "Due upon receipt. In-person close planned Sep 1–3 2026. Hairson emailed the PDF. Do not treat that as paid. Scheduled / not sent.",
+    },
+  });
+
   const userCount = await prisma.user.count();
   console.log(
-    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + sales desk + orders + payroll dates + MTG Airlines trips.`,
+    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + sales desk + orders + payroll dates + Wayne payable + MTG Airlines trips.`,
   );
 }
 

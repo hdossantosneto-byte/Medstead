@@ -580,6 +580,7 @@ model ScheduledPay {
   method       String
   status       String   @default("SCHEDULED")
   recurring    Boolean  @default(false)
+  invoiceNumber String?
   note         String?
   createdAt    DateTime @default(now())
 }

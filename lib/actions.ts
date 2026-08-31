@@ -41,6 +41,7 @@ function revalidateApp() {
   revalidatePath("/app/clinic/charter");
   revalidatePath("/app/sales");
   revalidatePath("/app/finance/payroll");
+  revalidatePath("/app/finance/payables");
   revalidatePath("/app/finance/quotes");
   revalidatePath("/app/finance/expenses");
   revalidatePath("/orders");

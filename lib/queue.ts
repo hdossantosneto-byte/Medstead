@@ -271,8 +271,24 @@ export async function loadQueue(user: {
       });
     }
 
+    const vendorPays = await prisma.scheduledPay.findMany({
+      where: { status: "SCHEDULED", invoiceNumber: { not: null } },
+      include: { payee: true },
+      orderBy: { dueAt: "asc" },
+    });
+    for (const p of vendorPays) {
+      items.push({
+        id: `payable-${p.id}`,
+        who: p.payee.displayName,
+        what: `Review payable ${p.invoiceNumber}`,
+        why: "Scheduled / not sent. Due upon receipt. Books only — the emailed PDF is not paid.",
+        actionLabel: "Open payable",
+        kind: "open",
+        href: "/app/finance/payables",
+      });
+    }
     const upcomingPays = await prisma.scheduledPay.findMany({
-      where: { status: "SCHEDULED", dueAt: { gte: new Date("2026-08-31") } },
+      where: { status: "SCHEDULED", invoiceNumber: null, dueAt: { gte: new Date("2026-08-31") } },
       include: { payee: true },
       orderBy: { dueAt: "asc" },
       take: 3,
