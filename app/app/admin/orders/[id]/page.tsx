@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ActivityLine } from "@/components/next-queue";
 import { Badge, Button, Card, PageHeader } from "@/components/ui";
 import { InvoiceButton, ManifestButton, StatusOverride } from "@/components/admin-forms";
 import { CLINIC_ORDER_LABEL } from "@/lib/constants";
@@ -19,7 +20,10 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
     <div>
       <PageHeader eyebrow={order.clinic.name} title={order.orderNumber} />
       <Card className="p-6">
-        <Badge>{CLINIC_ORDER_LABEL[order.status]}</Badge>
+        <ActivityLine text={order.activityLine} />
+        <div className="mt-3">
+          <Badge>{CLINIC_ORDER_LABEL[order.status]}</Badge>
+        </div>
         <div className="mt-4">
           <StatusOverride orderId={order.id} current={order.status} />
         </div>

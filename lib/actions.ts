@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import {
   CLINIC_ORDER_STATUSES,
   CLINIC_ROLES,
+  GATE_LABEL,
   GATE_ORDER,
   SHIPMENT_STATUSES,
 } from "./constants";
@@ -12,6 +13,7 @@ import { prisma } from "./prisma";
 import { unitPriceForQty } from "./pricing";
 import { auth, requireRole, requireUser, clinicApproved } from "./session";
 import { nextShipmentCode } from "./shipment-id";
+import type { QueueKind } from "./queue";
 
 function revalidateApp() {
   revalidatePath("/app");
@@ -19,6 +21,75 @@ function revalidateApp() {
   revalidatePath("/app/admin");
   revalidatePath("/app/ops");
   revalidatePath("/app/finance");
+}
+
+async function writeOrderActivity(
+  orderId: string,
+  actorId: string,
+  fromStatus: string | null,
+  toStatus: string,
+  line: string,
+) {
+  await prisma.clinicOrder.update({
+    where: { id: orderId },
+    data: { activityLine: line },
+  });
+  await prisma.statusEvent.create({
+    data: { clinicOrderId: orderId, fromStatus, toStatus, note: line, actorId },
+  });
+}
+
+async function writeShipmentActivity(
+  shipmentId: string,
+  actorId: string,
+  fromStatus: string | null,
+  toStatus: string,
+  line: string,
+) {
+  await prisma.shipment.update({
+    where: { id: shipmentId },
+    data: { activityLine: line },
+  });
+  await prisma.statusEvent.create({
+    data: { shipmentId, fromStatus, toStatus, note: line, actorId },
+  });
+}
+
+async function ensureOrderShipment(orderId: string, actorId: string) {
+  const order = await prisma.clinicOrder.findUnique({
+    where: { id: orderId },
+    include: { clinic: true, shipment: { include: { gates: true } }, invoice: true },
+  });
+  if (!order) return null;
+  if (order.shipment) return order.shipment;
+  const dest = order.clinic.market === "USA" ? "FLL" : "NAS";
+  const paid = order.invoice?.status === "paid";
+  const code = await nextShipmentCode("FLL", dest);
+  return prisma.shipment.create({
+    data: {
+      shipmentCode: code,
+      status: "APPROVED_PAID",
+      service: "EXPRESS_AIR",
+      origin: "FLL",
+      destination: dest,
+      weightLb: 20,
+      pieces: 1,
+      clinicOrderId: order.id,
+      consignee: order.clinic.name,
+      activityLine: "Ops opened the movement · waiting on six-gate release.",
+      gates: {
+        create: GATE_ORDER.map((name) => ({
+          name,
+          state: name === "COMMERCIAL_FINANCE" && paid ? "GREEN" : "PENDING",
+          signedById: name === "COMMERCIAL_FINANCE" && paid ? actorId : undefined,
+        })),
+      },
+      events: {
+        create: { toStatus: "APPROVED_PAID", actorId, note: "Shipment opened after payment." },
+      },
+    },
+    include: { gates: true },
+  });
 }
 
 export async function placeClinicOrder(form: {
@@ -64,7 +135,14 @@ export async function placeClinicOrder(form: {
       status: "SUBMITTED",
       notes: form.notes,
       items: { create: lines },
-      events: { create: { toStatus: "SUBMITTED", actorId: user.id, note: "Clinic submitted order" } },
+      activityLine: "Clinic submitted order · waiting on admin review.",
+      events: {
+        create: {
+          toStatus: "SUBMITTED",
+          actorId: user.id,
+          note: "Clinic submitted order · waiting on admin review.",
+        },
+      },
     },
   });
   revalidateApp();
@@ -73,9 +151,12 @@ export async function placeClinicOrder(form: {
 
 export async function approveClinic(clinicId: string, approve: boolean) {
   const admin = await requireRole(["MEDSTEAD_ADMIN"]);
+  const line = approve
+    ? "Admin approved clinic · they can order without a call."
+    : "Admin revoked approval · clinic seats inactive.";
   await prisma.clinic.update({
     where: { id: clinicId },
-    data: { approved: approve },
+    data: { approved: approve, activityLine: line },
   });
   await prisma.user.updateMany({
     where: { clinicId, role: { in: CLINIC_ROLES } },
@@ -83,7 +164,10 @@ export async function approveClinic(clinicId: string, approve: boolean) {
   });
   await prisma.crmAccount.updateMany({
     where: { clinicId },
-    data: { stage: approve ? "ACTIVATED" : "ELIGIBILITY_REVIEW" },
+    data: {
+      stage: approve ? "ACTIVATED" : "ELIGIBILITY_REVIEW",
+      activityLine: line,
+    },
   });
   void admin;
   revalidateApp();
@@ -97,7 +181,7 @@ export async function overrideClinicStatus(orderId: string, status: ClinicOrderS
   if (!order) return { error: "Order not found." };
   await prisma.clinicOrder.update({
     where: { id: orderId },
-    data: { status },
+    data: { status, activityLine: note || `Admin overrode status · ${status}.` },
   });
   await prisma.statusEvent.create({
     data: {
@@ -129,18 +213,16 @@ export async function generateInvoice(orderId: string) {
       dueAt: new Date(Date.now() + 14 * 86400000),
     },
   });
+  await writeOrderActivity(
+    orderId,
+    actor.id,
+    order.status,
+    "INVOICE_GENERATED",
+    "Finance generated invoice · waiting on payment pending.",
+  );
   await prisma.clinicOrder.update({
     where: { id: orderId },
     data: { status: "INVOICE_GENERATED" },
-  });
-  await prisma.statusEvent.create({
-    data: {
-      clinicOrderId: orderId,
-      fromStatus: order.status,
-      toStatus: "INVOICE_GENERATED",
-      note: "Invoice generated",
-      actorId: actor.id,
-    },
   });
   revalidateApp();
   return { ok: true };
@@ -154,25 +236,32 @@ export async function markPaymentPending(orderId: string) {
     where: { id: orderId },
     data: { status: "PAYMENT_PENDING" },
   });
-  await prisma.statusEvent.create({
-    data: {
-      clinicOrderId: orderId,
-      fromStatus: order.status,
-      toStatus: "PAYMENT_PENDING",
-      actorId: actor.id,
-    },
-  });
+  await writeOrderActivity(
+    orderId,
+    actor.id,
+    order.status,
+    "PAYMENT_PENDING",
+    "Finance sent invoice · waiting on clinic payment.",
+  );
   revalidateApp();
   return { ok: true };
 }
 
 export async function recordPayment(invoiceId: string, amount: number, method: string, online: boolean) {
-  const actor = await requireRole(["FINANCE", "MEDSTEAD_ADMIN"]);
+  const actor = await requireUser();
+  const allowed =
+    actor.role === "FINANCE" ||
+    actor.role === "MEDSTEAD_ADMIN" ||
+    CLINIC_ROLES.includes(actor.role);
+  if (!allowed) return { error: "Not allowed to record payment." };
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
     include: { order: true },
   });
   if (!invoice) return { error: "Invoice not found." };
+  if (CLINIC_ROLES.includes(actor.role) && invoice.order.clinicId !== actor.clinicId) {
+    return { error: "Not your clinic invoice." };
+  }
   await prisma.payment.create({
     data: {
       invoiceId,
@@ -189,9 +278,12 @@ export async function recordPayment(invoiceId: string, amount: number, method: s
     data: { paidAmount, status: paid ? "paid" : "partial" },
   });
   if (paid) {
+    const line = CLINIC_ROLES.includes(actor.role)
+      ? "Clinic paid invoice · waiting on ops to prepare shipment and run gates."
+      : "Finance marked paid · waiting on ops to prepare shipment and run gates.";
     await prisma.clinicOrder.update({
       where: { id: invoice.orderId },
-      data: { status: "PAYMENT_RECEIVED" },
+      data: { status: "PAYMENT_RECEIVED", activityLine: line },
     });
     await prisma.statusEvent.create({
       data: {
@@ -199,9 +291,22 @@ export async function recordPayment(invoiceId: string, amount: number, method: s
         fromStatus: invoice.order.status,
         toStatus: "PAYMENT_RECEIVED",
         actorId: actor.id,
-        note: "Finance recorded payment / credit",
+        note: line,
       },
     });
+    const shipment = await prisma.shipment.findUnique({
+      where: { clinicOrderId: invoice.orderId },
+    });
+    if (shipment) {
+      await prisma.releaseGate.updateMany({
+        where: { shipmentId: shipment.id, name: "COMMERCIAL_FINANCE" },
+        data: { state: "GREEN", signedById: actor.id },
+      });
+      await prisma.shipment.update({
+        where: { id: shipment.id },
+        data: { activityLine: line },
+      });
+    }
   }
   revalidateApp();
   return { ok: true };
@@ -234,9 +339,10 @@ export async function generateManifest(orderId: string) {
       destination: dest,
     },
   });
+  const line = "Manifest generated · waiting on Del to confirm the delivery date.";
   await prisma.clinicOrder.update({
     where: { id: orderId },
-    data: { status: "MANIFEST_GENERATED" },
+    data: { status: "MANIFEST_GENERATED", activityLine: line },
   });
   await prisma.statusEvent.create({
     data: {
@@ -244,8 +350,15 @@ export async function generateManifest(orderId: string) {
       fromStatus: order.status,
       toStatus: "MANIFEST_GENERATED",
       actorId: actor.id,
+      note: line,
     },
   });
+  if (order.shipment) {
+    await prisma.shipment.update({
+      where: { id: order.shipment.id },
+      data: { status: "RELEASED_MANIFESTED", publicClock: true, activityLine: line },
+    });
+  }
   revalidateApp();
   return { ok: true };
 }
@@ -254,7 +367,11 @@ export async function setCrmStage(id: string, stage: CrmStage, holdReason?: stri
   await requireRole(["MEDSTEAD_ADMIN"]);
   await prisma.crmAccount.update({
     where: { id },
-    data: { stage, holdReason: stage === "HOLD" || stage === "LOST" ? holdReason : null },
+    data: {
+      stage,
+      holdReason: stage === "HOLD" || stage === "LOST" ? holdReason : null,
+      activityLine: `CRM moved to ${stage} · no patient data.`,
+    },
   });
   revalidateApp();
   return { ok: true };
@@ -271,6 +388,25 @@ export async function setGate(shipmentId: string, name: GateName, state: GateSta
     where: { id: gate.id },
     data: { state, note, signedById: user.id },
   });
+  const shipment = await prisma.shipment.findUnique({
+    where: { id: shipmentId },
+    include: { gates: true, clinicOrder: true },
+  });
+  if (shipment) {
+    const fresh = await prisma.releaseGate.findMany({ where: { shipmentId } });
+    const green = GATE_ORDER.filter((n) => fresh.some((g) => g.name === n && g.state === "GREEN")).length;
+    const line =
+      green === GATE_ORDER.length
+        ? "All six gates green · waiting on ops to generate manifest."
+        : `${GATE_LABEL[name]} ${state.toLowerCase()} · ${green}/6 gates green.`;
+    await prisma.shipment.update({ where: { id: shipmentId }, data: { activityLine: line } });
+    if (shipment.clinicOrderId) {
+      await prisma.clinicOrder.update({
+        where: { id: shipment.clinicOrderId },
+        data: { activityLine: line },
+      });
+    }
+  }
   revalidateApp();
   return { ok: true };
 }
@@ -295,9 +431,13 @@ export async function setShipmentStatus(shipmentId: string, status: ShipmentStat
     status === "CUSTOMS_HOLD_RELEASED" ||
     status === "DESTINATION_RECEIVED" ||
     status === "DELIVERED_CLOSED";
+  const line =
+    status === "RELEASED_MANIFESTED"
+      ? "Ops released / manifested · public clock is on."
+      : `Shipment moved to ${status}.`;
   await prisma.shipment.update({
     where: { id: shipmentId },
-    data: { status, publicClock },
+    data: { status, publicClock, activityLine: line },
   });
   await prisma.statusEvent.create({
     data: {
@@ -305,6 +445,7 @@ export async function setShipmentStatus(shipmentId: string, status: ShipmentStat
       fromStatus: shipment.status,
       toStatus: status,
       actorId: actor.id,
+      note: line,
     },
   });
   revalidateApp();
@@ -382,4 +523,175 @@ export async function ensureCustomerWarehouse() {
   const code = `MS-C15-${String(1000 + Math.floor(Math.random() * 8000))}`;
   await prisma.user.update({ where: { id: user.id }, data: { warehouseCode: code } });
   return code;
+}
+
+export async function runNextAction(input: {
+  kind: QueueKind;
+  clinicId?: string;
+  orderId?: string;
+  invoiceId?: string;
+  shipmentId?: string;
+  crmId?: string;
+  gate?: GateName;
+  date?: string;
+}) {
+  if (input.kind === "open") return { ok: true };
+
+  if (input.kind === "approve_clinic" && input.clinicId) {
+    return approveClinic(input.clinicId, true);
+  }
+
+  if (input.kind === "approve_order" && input.orderId) {
+    const admin = await requireRole(["MEDSTEAD_ADMIN"]);
+    const order = await prisma.clinicOrder.findUnique({ where: { id: input.orderId } });
+    if (!order) return { error: "Order not found." };
+    await prisma.clinicOrder.update({
+      where: { id: input.orderId },
+      data: { status: "APPROVED" },
+    });
+    await writeOrderActivity(
+      input.orderId,
+      admin.id,
+      order.status,
+      "APPROVED",
+      "Admin approved order · waiting on finance to generate invoice.",
+    );
+    revalidateApp();
+    return { ok: true };
+  }
+
+  if (input.kind === "crm_followup" && input.crmId) {
+    await requireRole(["MEDSTEAD_ADMIN"]);
+    await prisma.crmAccount.update({
+      where: { id: input.crmId },
+      data: {
+        stage: "ELIGIBILITY_REVIEW",
+        followUpAt: new Date(Date.now() + 48 * 3600 * 1000),
+        activityLine: "Clint logged 48h follow-up · waiting on eligibility review. No patient data.",
+      },
+    });
+    revalidateApp();
+    return { ok: true };
+  }
+
+  if (input.kind === "crm_activate" && input.crmId) {
+    await requireRole(["MEDSTEAD_ADMIN"]);
+    const crm = await prisma.crmAccount.findUnique({ where: { id: input.crmId } });
+    if (!crm) return { error: "CRM account not found." };
+    if (crm.clinicId) {
+      await approveClinic(crm.clinicId, true);
+    }
+    await prisma.crmAccount.update({
+      where: { id: input.crmId },
+      data: {
+        stage: "ACTIVATED",
+        activityLine: "Clint activated clinic · they can order without a call.",
+      },
+    });
+    revalidateApp();
+    return { ok: true };
+  }
+
+  if (input.kind === "generate_invoice" && input.orderId) {
+    return generateInvoice(input.orderId);
+  }
+  if (input.kind === "mark_payment_pending" && input.orderId) {
+    return markPaymentPending(input.orderId);
+  }
+  if (input.kind === "mark_paid" && input.invoiceId) {
+    const invoice = await prisma.invoice.findUnique({ where: { id: input.invoiceId } });
+    if (!invoice) return { error: "Invoice not found." };
+    return recordPayment(input.invoiceId, invoice.amount - invoice.paidAmount, "In-app (demo)", true);
+  }
+  if (input.kind === "clinic_pay" && input.invoiceId) {
+    const user = await requireUser();
+    if (!CLINIC_ROLES.includes(user.role) || !clinicApproved(user)) {
+      return { error: "Clinic is not approved." };
+    }
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: input.invoiceId },
+      include: { order: true },
+    });
+    if (!invoice || invoice.order.clinicId !== user.clinicId) return { error: "Invoice not found." };
+    return recordPayment(input.invoiceId, invoice.amount - invoice.paidAmount, "Clinic paid in-app", true);
+  }
+
+  if (input.kind === "sign_finance_gate" && input.shipmentId) {
+    return setGate(input.shipmentId, "COMMERCIAL_FINANCE", "GREEN", "Finance signed payment / credit.");
+  }
+
+  if (input.kind === "prepare_shipment" && input.orderId) {
+    const actor = await requireRole(["OPS"]);
+    const order = await prisma.clinicOrder.findUnique({ where: { id: input.orderId } });
+    if (!order) return { error: "Order not found." };
+    if (order.status !== "PAYMENT_RECEIVED" && order.status !== "PREPARING_SHIPMENT") {
+      return { error: "Order is not ready to prepare." };
+    }
+    await ensureOrderShipment(input.orderId, actor.id);
+    const line = "Ops preparing shipment · waiting on six-gate release. Del owns delivery dates.";
+    await prisma.clinicOrder.update({
+      where: { id: input.orderId },
+      data: { status: "PREPARING_SHIPMENT", activityLine: line },
+    });
+    await writeOrderActivity(input.orderId, actor.id, order.status, "PREPARING_SHIPMENT", line);
+    revalidateApp();
+    return { ok: true };
+  }
+
+  if (input.kind === "green_gate" && input.shipmentId && input.gate) {
+    const actor = await requireRole(["OPS"]);
+    if (input.gate === "COMMERCIAL_FINANCE") {
+      return { error: "Finance signs the commercial / finance gate." };
+    }
+    void actor;
+    return setGate(input.shipmentId, input.gate, "GREEN", "Ops cleared gate.");
+  }
+
+  if (input.kind === "generate_manifest" && input.orderId) {
+    return generateManifest(input.orderId);
+  }
+
+  if (input.kind === "set_delivery_date" && input.orderId) {
+    const actor = await requireRole(["OPS"]);
+    if (!input.date) return { error: "Pick a delivery date. Del owns date promises." };
+    const when = new Date(input.date);
+    if (Number.isNaN(when.getTime())) return { error: "Invalid date." };
+    const line = "Del confirmed delivery date · waiting on ops to mark shipped. Sales cannot promise dates.";
+    await prisma.clinicOrder.update({
+      where: { id: input.orderId },
+      data: { promisedDate: when, activityLine: line },
+    });
+    await prisma.shipment.updateMany({
+      where: { clinicOrderId: input.orderId },
+      data: { promisedDate: when, activityLine: line },
+    });
+    await writeOrderActivity(input.orderId, actor.id, "MANIFEST_GENERATED", "MANIFEST_GENERATED", line);
+    revalidateApp();
+    return { ok: true };
+  }
+
+  if (input.kind === "mark_shipped" && input.orderId) {
+    const actor = await requireRole(["OPS"]);
+    const order = await prisma.clinicOrder.findUnique({ where: { id: input.orderId } });
+    if (!order) return { error: "Order not found." };
+    if (!order.promisedDate) return { error: "Del must confirm a delivery date first." };
+    const line = "Ops shipped · clinic can track without calling.";
+    await prisma.clinicOrder.update({
+      where: { id: input.orderId },
+      data: { status: "SHIPPED", activityLine: line },
+    });
+    await writeOrderActivity(input.orderId, actor.id, order.status, "SHIPPED", line);
+    await prisma.shipment.updateMany({
+      where: { clinicOrderId: input.orderId },
+      data: { status: "IN_TRANSIT", publicClock: true, activityLine: line },
+    });
+    revalidateApp();
+    return { ok: true };
+  }
+
+  if (input.kind === "release_shipment" && input.shipmentId) {
+    return setShipmentStatus(input.shipmentId, "RELEASED_MANIFESTED");
+  }
+
+  return { error: "Unknown next action." };
 }

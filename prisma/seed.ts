@@ -205,6 +205,7 @@ async function main() {
       address: "Hastings, Christ Church, Barbados",
       contactEmail: "pharmacy@medstead.demo",
       licenseNote: "Pending MedStead admin approval",
+      activityLine: "Waiting on Clint to approve · pharmacy cannot order yet.",
     },
   });
 
@@ -219,6 +220,7 @@ async function main() {
       address: "Carmichael Road, Nassau, Bahamas",
       contactEmail: "rolle@example.invalid",
       licenseNote: "Awaiting eligibility review",
+      activityLine: "Forum/Consult · 48h follow-up is waiting on Clint.",
     },
   });
 
@@ -315,6 +317,8 @@ async function main() {
     clinicId?: string;
     ownerNote: string;
     holdReason?: string;
+    activityLine?: string;
+    followUpAt?: Date;
   }> = [
     {
       name: "Harbor Wellness",
@@ -342,6 +346,7 @@ async function main() {
       stage: "ELIGIBILITY_REVIEW",
       clinicId: wellness360.id,
       ownerNote: "Barbados partner. Clinic account pending admin approval.",
+      activityLine: "Eligibility review · waiting on Clint to activate.",
     },
     {
       name: "Rolle Family Practice",
@@ -350,7 +355,9 @@ async function main() {
       country: "Bahamas",
       stage: "FORUM_CONSULT",
       clinicId: rolle.id,
-      ownerNote: "Invited to monthly provider forum. 48h follow-up logged.",
+      ownerNote: "Invited to monthly provider forum. 48h follow-up due.",
+      activityLine: "Forum/Consult · 48h follow-up waiting on Clint. No patient data.",
+      followUpAt: new Date(Date.now() - 2 * 86400000),
     },
     {
       name: "Carolina Lopes Partner Desk",
@@ -419,6 +426,7 @@ async function main() {
     withInvoice?: boolean;
     paid?: boolean;
     withManifest?: boolean;
+    activityLine?: string;
   }) {
     const lines = opts.items.map((it) => {
       const tier =
@@ -441,11 +449,12 @@ async function main() {
         userId: opts.userId,
         status: opts.status,
         notes: "Prices include delivery within 7 days to the clinic.",
+        activityLine: opts.activityLine,
         items: { create: lines },
         events: {
           create: {
             toStatus: opts.status,
-            note: "Seeded demo order",
+            note: opts.activityLine || "Seeded demo order",
             actorId: createdUsers["admin@medstead.demo"],
           },
         },
@@ -502,6 +511,7 @@ async function main() {
     clinicId: harbor.id,
     userId: createdUsers["clinic.admin@medstead.demo"],
     status: "SUBMITTED",
+    activityLine: "Clinic submitted order · waiting on admin review.",
     items: [
       { product: usaIv, qty: 4, market: "USA" },
       { product: usaDevice, qty: 100, market: "USA" },
@@ -513,11 +523,37 @@ async function main() {
     clinicId: bethel.id,
     userId: createdUsers["doctor@medstead.demo"],
     status: "PAYMENT_PENDING",
+    activityLine: "Finance sent invoice · waiting on clinic payment.",
     items: [
       { product: intlIv, qty: 6, market: "INTL" },
       { product: intlDevice, qty: 40, market: "INTL" },
     ],
     withInvoice: true,
+  });
+
+  await makeOrder({
+    number: "CO-1005",
+    clinicId: harbor.id,
+    userId: createdUsers["clinic.admin@medstead.demo"],
+    status: "APPROVED",
+    activityLine: "Admin approved order · waiting on finance to generate invoice.",
+    items: [
+      { product: usaIv2, qty: 3, market: "USA" },
+      { product: usaDevice, qty: 100, market: "USA" },
+    ],
+  });
+
+  await makeOrder({
+    number: "CO-1006",
+    clinicId: bethel.id,
+    userId: createdUsers["doctor@medstead.demo"],
+    status: "PAYMENT_RECEIVED",
+    activityLine: "Finance marked paid · waiting on ops to prepare shipment and run gates.",
+    items: [
+      { product: intlIv, qty: 4, market: "INTL" },
+    ],
+    withInvoice: true,
+    paid: true,
   });
 
   const shipped = await makeOrder({
@@ -532,6 +568,7 @@ async function main() {
     withInvoice: true,
     paid: true,
     withManifest: true,
+    activityLine: "Ops shipped · clinic can track without calling.",
   });
 
   await makeOrder({
@@ -546,6 +583,7 @@ async function main() {
     withInvoice: true,
     paid: true,
     withManifest: true,
+    activityLine: "Delivered · record closed.",
   });
 
   const customerId = createdUsers["customer@medstead.demo"];
@@ -606,6 +644,12 @@ async function main() {
         consignee: opts.clinicOrderId ? "Bethel Medical" : "Marcus Reed",
         description: "Demo freight / clinic movement",
         publicClock: opts.publicClock ?? opts.status !== "SUBMITTED",
+        activityLine:
+          opts.status === "ORIGIN_RECEIVED_HOLD"
+            ? "Origin received-hold · waiting on ops packaging / quality gate."
+            : opts.status === "IN_TRANSIT"
+              ? "In transit · public clock is on."
+              : "Quoted · waiting on later ops steps.",
         events: {
           create: {
             toStatus: opts.status,
@@ -614,18 +658,26 @@ async function main() {
           },
         },
         gates: {
-          create: GATES.map((name) => ({
-            name,
-            state: (opts.gatesGreen ? "GREEN" : name === "COMMERCIAL_FINANCE" ? "PENDING" : "GREEN") as GateState,
-            signedById:
-              name === "COMMERCIAL_FINANCE"
-                ? createdUsers["finance@medstead.demo"]
-                : createdUsers["ops@medstead.demo"],
-            note:
-              name === "COMMERCIAL_FINANCE"
-                ? "Finance signs payment / credit."
-                : undefined,
-          })),
+          create: GATES.map((name) => {
+            const pendingOps =
+              !opts.gatesGreen &&
+              (name === "PACKAGING_QUALITY" || name === "CARRIER_CAPACITY");
+            const state = (
+              opts.gatesGreen ? "GREEN" : pendingOps ? "PENDING" : "GREEN"
+            ) as GateState;
+            return {
+              name,
+              state,
+              signedById:
+                name === "COMMERCIAL_FINANCE"
+                  ? createdUsers["finance@medstead.demo"]
+                  : createdUsers["ops@medstead.demo"],
+              note:
+                name === "COMMERCIAL_FINANCE"
+                  ? "Finance signs payment / credit."
+                  : undefined,
+            };
+          }),
         },
       },
     });

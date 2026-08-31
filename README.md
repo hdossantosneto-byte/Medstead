@@ -48,15 +48,27 @@ Visit `/demo` and click a role. Password for **every** seeded user is `demo1234`
 | Ops | ops@medstead.demo | Six-gate release; no finance totals |
 | Finance | finance@medstead.demo | Invoices/payments; cannot ship |
 
+## Do this next
+
+Each signed-in home (`/app`) is a **Do this next** queue: work waiting on that role, one card, one button. Completing a step writes an activity line on the record and creates the next role’s item. Empty state: “You're clear. Nothing is waiting on you.”
+
+Seeded examples:
+
+- **Admin (Clint):** 48h follow-up (Rolle), activate 360 Wellness, approve submitted order CO-1001.
+- **Finance:** generate invoice for approved CO-1005; mark paid on CO-1002.
+- **Ops (Del):** prepare shipment for paid CO-1006; clear packaging/quality on hold freight; date promises are Del-only.
+- **Pharmacy:** pending approval until Clint activates 360 Wellness.
+- **Doctor:** pay invoice CO-1002 so ops can start without a call.
+
+Finance cannot ship. Ops cannot see invoice totals. Sales/admin cannot set delivery dates.
+
 ## What to try
 
 1. Public: `/freight` quote (Express Air 3–5 days, Standard Sea 5–7 days) and `/track/MS-20260820-FLL-NAS-0001`.
-2. Customer: rewards (100 welcome + 1 pt / $1) and WareSpace C15, 700 NW 57th Ct, Fort Lauderdale, FL 33309.
+2. `/demo` as admin, finance, ops, and pharmacy — each home is a next-action queue from live records.
 3. Approved clinic: `/app/clinic/catalog` — USA vs international books, place an order through the 11 clinic statuses.
-4. Admin: approve 360 Wellness, move CRM stages, override order status, generate invoice/manifest.
-5. Ops: `/app/ops/compliance` six gates. Catalog and orders hide money.
-6. Finance: invoices and payments. No warehouse/flight actions.
-7. Flight ops: `/app/flights` is labeled coming later.
+4. Customer: rewards (100 welcome + 1 pt / $1) and WareSpace C15, 700 NW 57th Ct, Fort Lauderdale, FL 33309.
+5. Flight ops: `/app/flights` is labeled coming later.
 
 Printable docs (signed-in): Commercial Invoice, Packing List, Air Waybill, Customs Declaration, Import/Export Manifest under `/docs/{kind}/{orderId}`.
 

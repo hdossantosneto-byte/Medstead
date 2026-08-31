@@ -7,7 +7,7 @@ import { SignOutButton } from "./sign-out-button";
 type NavItem = { href: string; label: string };
 
 function navFor(role: Role, clinicOk: boolean): NavItem[] {
-  const base: NavItem[] = [{ href: "/app", label: "Home" }];
+  const base: NavItem[] = [{ href: "/app", label: "Do this next" }];
   if (role === "PUBLIC" || role === "CUSTOMER") {
     base.push(
       { href: "/freight", label: "New quote" },

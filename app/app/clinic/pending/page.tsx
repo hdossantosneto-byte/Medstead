@@ -1,3 +1,4 @@
+import { ActivityLine } from "@/components/next-queue";
 import { Card, PageHeader } from "@/components/ui";
 import { CONTACT_ORDERS } from "@/lib/constants";
 import { requireUser } from "@/lib/session";
@@ -12,7 +13,13 @@ export default async function PendingClinicPage() {
         lede="Clinic, doctor, and pharmacy seats stay inactive until a MedStead admin approves the organization."
       />
       <Card className="p-6">
-        <p className="text-sm leading-6 text-navy-800/70">
+        <ActivityLine
+          text={
+            user.clinic?.activityLine ||
+            "Waiting on MedStead admin (Clint) to approve this clinic. You cannot order yet."
+          }
+        />
+        <p className="mt-4 text-sm leading-6 text-navy-800/70">
           {user.clinic ? (
             <>
               <strong>{user.clinic.name}</strong> ({user.clinic.city}, {user.clinic.country}) is{" "}

@@ -1,3 +1,4 @@
+import { ActivityLine } from "@/components/next-queue";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { PaymentForm } from "@/components/admin-forms";
 import { money } from "@/lib/format";
@@ -33,6 +34,9 @@ export default async function FinanceInvoicesPage() {
                   </p>
                 </div>
                 <Badge tone={inv.status === "paid" ? "green" : "amber"}>{inv.status}</Badge>
+              </div>
+              <div className="mt-3">
+                <ActivityLine text={inv.order.activityLine} />
               </div>
               {remaining > 0 && (
                 <div className="mt-4 max-w-sm">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ActivityLine } from "@/components/next-queue";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { GateToggle, ShipmentStatusForm } from "@/components/admin-forms";
 import { SERVICE_LABEL, SHIPMENT_LABEL } from "@/lib/constants";
@@ -37,7 +38,11 @@ export default async function OpsShippingPage() {
               </div>
               <p className="mt-2 text-xs text-navy-800/50">
                 Gates {green}/6 green · {s.weightLb} lb · {s.pieces} pcs
+                {s.promisedDate ? " · date set by Del" : ""}
               </p>
+              <div className="mt-3">
+                <ActivityLine text={s.activityLine} />
+              </div>
               <div className="mt-4 grid gap-2 md:grid-cols-2">
                 {s.gates.map((g) => (
                   <GateToggle key={g.id} shipmentId={s.id} name={g.name} state={g.state} />

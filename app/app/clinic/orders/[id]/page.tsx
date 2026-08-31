@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { ActivityLine } from "@/components/next-queue";
 import { Badge, Button, Card, PageHeader } from "@/components/ui";
 import { CLINIC_ORDER_LABEL, CLINIC_ORDER_STATUSES } from "@/lib/constants";
 import { money, when } from "@/lib/format";
@@ -58,7 +59,10 @@ export default async function ClinicOrderDetail({ params }: { params: { id: stri
           <p className="mt-4 text-right font-semibold">Total {money(total)}</p>
         </Card>
         <Card className="p-6">
-          <Badge>{CLINIC_ORDER_LABEL[order.status]}</Badge>
+          <ActivityLine text={order.activityLine} />
+          <div className="mt-3">
+            <Badge>{CLINIC_ORDER_LABEL[order.status]}</Badge>
+          </div>
           {order.invoice && (
             <p className="mt-4 text-sm">
               Invoice {order.invoice.number} · {money(order.invoice.amount)}
@@ -66,6 +70,9 @@ export default async function ClinicOrderDetail({ params }: { params: { id: stri
           )}
           {order.manifest && (
             <p className="mt-2 text-sm">Manifest {order.manifest.number}</p>
+          )}
+          {order.promisedDate && (
+            <p className="mt-2 text-sm">Delivery date (set by Del): {when(order.promisedDate)}</p>
           )}
           <div className="mt-4 flex flex-col gap-2">
             {order.invoice && (

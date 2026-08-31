@@ -130,6 +130,7 @@ model Clinic {
   address      String
   contactEmail String
   licenseNote  String?
+  activityLine String?
   createdAt    DateTime    @default(now())
   users        User[]
   orders       ClinicOrder[]
@@ -178,6 +179,8 @@ model ClinicOrder {
   user        User              @relation(fields: [userId], references: [id])
   status      ClinicOrderStatus @default(SUBMITTED)
   notes       String?
+  activityLine String?
+  promisedDate DateTime?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   items       ClinicOrderItem[]
@@ -269,6 +272,8 @@ model Shipment {
   consignee     String
   description   String?
   publicClock   Boolean        @default(false)
+  activityLine  String?
+  promisedDate  DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   gates         ReleaseGate[]
@@ -310,6 +315,8 @@ model CrmAccount {
   stage      CrmStage  @default(TARGETED)
   holdReason String?
   ownerNote  String?
+  activityLine String?
+  followUpAt DateTime?
   clinicId   String?   @unique
   clinic     Clinic?   @relation(fields: [clinicId], references: [id])
   createdAt  DateTime  @default(now())
