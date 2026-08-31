@@ -1,0 +1,144 @@
+[merged] *NEW* B-NAD                        100MG/1ML (500MG)                5ML VIAL                           $220.00
+[merged] *NEW* METHYLCOBALAMIN              10MG/ML (50MG)                   5ML VIAL                           $200.00
+[merged] AMINO ACID BLEND          15MG/15MG/15MG/15MG/ML         10ML VIAL                          $160.00
+[merged] AMINO ACID BLEND          15MG/15MG/15MG/15MG/ML         30ML VIAL                          $240.00
+[merged] B-COMPLEX                 100/2/2/2/2MG/ML               10ML VIAL                          $140.00
+[merged] B-COMPLEX                 100/2/2/2/2MG/ML               30ML VIAL                          $200.00
+[merged] BIOTIN                    10MG/ML                        10ML VIAL                          $160.00
+[merged] BIOTIN                    10MG/ML                        30ML VIAL                          $240.00
+[merged] L-CARNITINE               500MG/ML                       10ML VIAL                          $160.00
+[merged] L-CARNITINE               500MG/ML                       30ML VIAL                          $240.00
+[merged] CHROMIUM PICOLINATE       200MCG/ML                      10ML VIAL                          $160.00
+[merged] CHROMIUM PICOLINATE       200MCG/ML                      30ML VIAL                          $240.00
+[merged] CYANOCOBALAMIN (B12)      1000MCG/ML                     10ML VIAL                          $120.00
+[merged] CYANOCOBALAMIN (B12)      1000MCG/ML                     30ML VIAL                          $160.00
+[merged] CYANOCOBALAMIN (B12)      5000MCG/ML                     10ML VIAL                          $160.00
+[merged] CYANOCOBALAMIN (B12)      5000MCG/ML                     30ML VIAL                          $240.00
+[merged] DEXAMETHASONE SODIUM PHOSPHATE   4MG/ML                       30ML VIAL                          $180.00
+[merged] GLUTATHIONE                      200MG/ML                     10ML VIAL                          $160.00
+[merged] GLUTATHIONE                      200MG/ML                     30ML VIAL                          $240.00
+[merged] HYDROXOCOBALAMIN (B12)           1000MCG/ML                   10ML VIAL                          $140.00
+[merged] HYDROXOCOBALAMIN (B12)           1000MCG/ML                   30ML VIAL                          $180.00
+[merged] HYDROXOCOBALAMIN (B12)           5000MCG/ML                   10ML VIAL                          $180.00
+[merged] HYDROXOCOBALAMIN (B12)           5000MCG/ML                   30ML VIAL                          $260.00
+[merged] LIPO-B (MIC+B12)                 25/50/50MG/1000MCG/ML        10ML VIAL                          $140.00
+[merged] LIPO-B (MIC+B12)                 25/50/50MG/1000MCG/ML        30ML VIAL                          $200.00
+[merged] LIPO-C                           25/50/50/50/15/15MG/500MCG   10ML VIAL                          $160.00
+[merged] LIPO-C                           25/50/50/50/15/15MG/500MCG   30ML VIAL                          $240.00
+[merged] MAGNESIUM CHLORIDE               200MG/ML                     10ML VIAL                          $160.00
+[merged] MAGNESIUM CHLORIDE               200MG/ML                     30ML VIAL                          $240.00
+[merged] METHYLCOBALAMIN (B12)            1000MCG/ML                   10ML VIAL                          $140.00
+[merged] METHYLCOBALAMIN (B12)            1000MCG/ML                   30ML VIAL                          $180.00
+[merged] METHYLCOBALAMIN (B12)            5000MCG/ML                   10ML VIAL                          $180.00
+[merged] METHYLCOBALAMIN (B12)            5000MCG/ML                   30ML VIAL                          $260.00
+[merged] NAD+                             50MG/ML                      10ML VIAL                          $280.00
+[merged] NAD+                             100MG/ML                     5ML VIAL                           $220.00
+[merged] NAD+                             100MG/ML                     10ML VIAL                          $400.00
+[merged] PANTOTHENIC ACID (B5)            100MG/ML                     10ML VIAL                          $160.00
+[merged] PANTOTHENIC ACID (B5)            100MG/ML                     30ML VIAL                          $240.00
+[merged] PYRIDOXINE (B6)                  100MG/ML                     10ML VIAL                          $160.00
+[merged] PYRIDOXINE (B6)                  100MG/ML                     30ML VIAL                          $240.00
+[merged] SODIUM ASCORBATE (VIT C)         500MG/ML                     30ML VIAL                          $180.00
+[merged] TAURINE                          50MG/ML                      10ML VIAL                          $160.00
+[merged] TAURINE                          50MG/ML                      30ML VIAL                          $240.00
+[merged] TESTOSTERONE CYPIONATE           200MG/ML                     5ML VIAL                           $152.00
+[merged] TESTOSTERONE CYPIONATE           200MG/ML                     10ML VIAL                          $180.00
+[merged] TESTOSTERONE ENANTHATE           200MG/ML                     5ML VIAL                           $165.00
+[merged] FENBENZADOL                222MG                   CAPSULES                                 $2.00
+[merged] IVERMECTIN                 12MG                    CAPSULES                                 $2.00
+[merged] IVERMECTIN                 24MG                    CAPSULES                                 $3.40
+[merged] IVERMECTIN                 48MG                    CAPSULES                                 $5.00
+[merged] IVERMECTIN                 10MG/ML                 30ML ORAL LIQUID                     $160.00
+[merged] OXYTOCIN                   100IU/ML                5ML VIAL                             $140.00
+[merged] OXYTOCIN                   200IU/ML                5ML VIAL                             $180.00
+[merged] OXYTOCIN                   100IU                   TROCHE                                   $1.80
+[merged] OXYTOCIN                   200IU                   TROCHE                                   $2.20
+[merged] TESOFENSINE                        500MCG                   CAPSULES                                    $3.40
+[merged] APREPITANT                         125MG                    CAPSULES                                    $8.00
+[merged] APREPITANT                         80MG                     CAPSULES                                    $6.00
+[merged] APREPITANT                         40MG                     CAPSULES                                    $4.00
+[merged] BEAH BLEND (BIE/EST/ALEN/HYD)      2/0.5/10/10MG            SUPPOSITORY                                 $4.00
+[merged] ESTRIOL / PROGESTERONE             2MG/200MG                SUPPOSITORY                                 $3.00
+[merged] KETAMINE HCL                       50MG                     TROCHE                                      $1.80
+[merged] KETAMINE HCL                       100MG                    TROCHE                                      $2.20
+[merged] KETAMINE HCL                       150MG                    TROCHE                                      $2.60
+[merged] KETAMINE HCL                       200MG                    TROCHE                                      $3.00
+[merged] KETAMINE HCL                       100MG/ML                 5ML VIAL                               $140.00
+[merged] KETAMINE HCL                       100MG/ML                 10ML VIAL                              $200.00
+[merged] KETAMINE HCL                       100MG/ML                 30ML VIAL                              $360.00
+[merged] KETAMINE HCL / OXYTOCIN            100MG/100IU              TROCHE                                      $2.60
+[merged] KETAMINE HCL / OXYTOCIN            150MG/100IU              TROCHE                                      $3.00
+[merged] KETAMINE HCL / OXYTOCIN            200MG/100IU              TROCHE                                      $3.40
+[merged] PROGESTERONE                       100MG                    CAPSULES                                    $1.50
+[merged] PROGESTERONE                       200MG                    CAPSULES                                    $1.50
+[merged] PROGESTERONE                       50MG                     TROCHE / RAPID DIS                          $1.80
+[merged] PROGESTERONE                       100MG                    TROCHE / RAPID DIS                          $2.00
+[merged] PROGESTERONE                       200MG                    TROCHE / RAPID DIS                          $2.20
+[merged] TESTOSTERONE                       50MG                     TROCHE                                      $1.80
+[merged] TESTOSTERONE                       100MG                    TROCHE                                      $2.20
+[merged] BI-EST (ESTRIOL/ESTRADIOL 80/20)   1.25MG/ML                30ML - 1 PUMP                              $60.00
+[merged] BI-EST (ESTRIOL/ESTRADIOL 80/20)   2.5MG/ML               30ML - 1 PUMP                          $60.00
+[merged] BI-EST (ESTRIOL/ESTRADIOL 80/20)   5MG/ML                 30ML - 1 PUMP                          $60.00
+[merged] BI-EST / PROGESTERONE              1.25MG/20MG/ML         30ML - 1 PUMP                          $60.00
+[merged] BI-EST / PROGESTERONE              2.5MG/50MG/ML          30ML - 1 PUMP                          $60.00
+[merged] BI-EST / PROGESTERONE              5MG/100MG/ML           30ML - 1 PUMP                          $60.00
+[merged] BI-EST / PROG / TESTOSTERONE       2.5/50/2MG/ML          30ML - 1 PUMP                          $60.00
+[merged] BI-EST / PROG / TESTOSTERONE       5/100/4MG/ML           30ML - 1 PUMP                          $60.00
+[merged] DHEA                               5MG/ML                 30ML - 1 PUMP                          $60.00
+[merged] DHEA                               10MG/ML                30ML - 1 PUMP                          $60.00
+[merged] PROGESTERONE - LLPUMPA (30ML)      25MG/ML                30ML - 1 PUMP                          $60.00
+[merged] PROGESTERONE - LLPUMPA (30ML)      50MG/ML                30ML - 1 PUMP                          $60.00
+[merged] PROGESTERONE - LLPUMPA (30ML)      100MG/ML               30ML - 1 PUMP                          $60.00
+[merged] PROGESTERONE - LLPUMPA (30ML)      200MG/ML               30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      10MG/ML                30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      25MG/ML                30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      50MG/ML                30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      100MG/ML               30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      15MG/ML                30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      50MG/ML                30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      0.50MG/ML              30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      1MG/ML                 30ML - 1 PUMP                          $60.00
+[merged] TESTOSTERONE - LLPUMPA (30ML)      30MG/ML                30ML - 1 PUMP                          $60.00
+[merged] 5-AMINO-1-MQ                       25MG                   TROCHE                                  $2.30
+[merged] CLOMIPHENE                         25MG                   TROCHE                                  $1.80
+[merged] CLOMIPHENE                         50MG                   TROCHE                                  $2.20
+[merged] CLOMIPHENE                         100MG                  TROCHE                                  $2.60
+[merged] COQ10                              20MG/ML                10ML VIAL                          $160.00
+[merged] COQ10                              20MG/ML                30ML VIAL                          $240.00
+[merged] L-ARGININE                      200MG/ML               10ML VIAL                          $160.00
+[merged] L-ARGININE                      200MG/ML               30ML VIAL                          $240.00
+[merged] L-GLUTAMINE                     30MG/ML                10ML VIAL                          $160.00
+[merged] L-GLUTAMINE                     30MG/ML                30ML VIAL                          $240.00
+[merged] L-ISOLEUCINE                    15MG/ML                10ML VIAL                          $160.00
+[merged] L-ISOLEUCINE                    15MG/ML                30ML VIAL                          $240.00
+[merged] L-LEUCINE                       15MG/ML                10ML VIAL                          $160.00
+[merged] L-LEUCINE                       15MG/ML                30ML VIAL                          $240.00
+[merged] L-LYSINE HCL                    100MG/ML               10ML VIAL                          $160.00
+[merged] L-LYSINE HCL                    100MG/ML               30ML VIAL                          $240.00
+[merged] L-METHIONINE                    25MG/ML                10ML VIAL                          $160.00
+[merged] L-METHIONINE                    25MG/ML                30ML VIAL                          $240.00
+[merged] L-ORNITHINE HCL                 50MG/ML                10ML VIAL                          $160.00
+[merged] L-ORNITHINE HCL                 50MG/ML                30ML VIAL                          $240.00
+[merged] L-PHENYLALANINE                 75MG/ML                10ML VIAL                          $160.00
+[merged] L-PHENYLALANINE                 75MG/ML                30ML VIAL                          $240.00
+[merged] L-PROLINE                       50MG/ML                10ML VIAL                          $160.00
+[merged] L-PROLINE                       50MG/ML                30ML VIAL                          $240.00
+[merged] L-VALINE                        15MG/ML                10ML VIAL                          $160.00
+[merged] L-VALINE                        15MG/ML                30ML VIAL                          $240.00
+[merged] LIPO-MINO MIX                   30ML VIAL                                                 $240.00
+[merged] M.I.C. (METH/INOS/CHOL)         25/50/50MG/ML          10ML VIAL                          $140.00
+[merged] M.I.C. (METH/INOS/CHOL)         25/50/50MG/ML          30ML VIAL                          $200.00
+[merged] METHYLCOBALAMIN / L-CARNITINE   5MG/100MG/ML           10ML VIAL                          $160.00
+[merged] METHYLCOBALAMIN / L-CARNITINE   5MG/100MG/ML           30ML VIAL                          $240.00
+[merged] TRIPLE M.I.C. (METH/INOS/CHOL)   75/150/150MG/ML               10ML VIAL                           $160.00
+[merged] TRIPLE M.I.C. (METH/INOS/CHOL)   75/150/150MG/ML               30ML VIAL                           $240.00
+[merged] VITAMIN D3 (CHOLECALCIFEROL)     50000IU/ML                    10ML VIAL                           $160.00
+[merged] VITAMIN D3 (CHOLECALCIFEROL)     50000IU/ML                    30ML VIAL                           $240.00
+[merged] CHO/INO/MET/NAL/SER/TOP          50MG/50MG25MG/8MG/600MCG/15MG CAPSULE                                 $10.00
+[merged] METFORMIN HCL                    500MG                         TABLET                                   $1.60
+[merged] METFORMIN HCL                    850MG                         TABLET                                   $2.00
+[merged] METFORMIN HCL                    1000MG                        TABLET                                   $2.40
+[merged] METHYLCOBALAMIN / L-CARNITINE    10MG/100MG                    TROCHE                                   $2.40
+SUPPLIES                             INSULIN SYRINGES         10PK/1                                        $10.00
+SUPPLIES                             INTRAMUSCULAR SYRINGES                      1                           $1.00
+SUPPLIES                             SWABS                                       1                           $0.20
