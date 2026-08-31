@@ -10,13 +10,23 @@ import type {
 } from "@prisma/client";
 
 export const BRAND = "MedStead";
+export const BRAND_TRANSPORT = "MedStead Transport";
 export const TAGLINE = "FASTER ACCESS. BETTER CARE.";
 export const PUBLIC_LINE =
-  "We provide medicinal goods and care, and expedite them to hard to reach destinations.";
+  "We specialize in moving medicine and supplies to communities other carriers struggle to reach.";
 export const MISSION =
   "Our mission is to ensure every community has access to the health care it deserves.";
 export const PLATFORM_LINE = "One relationship. One coordinated platform.";
 export const CONTACT_ORDERS = "Orders@medsteadgroup.com";
+
+/** Live freight app. Marketing CTAs link here; do not redirect this site away. */
+export const APP_ORIGIN = "https://go.medsteadtransport.com";
+export const APP_GET_STARTED = APP_ORIGIN;
+export const APP_QUOTE = APP_ORIGIN;
+export const APP_TRACK = APP_ORIGIN;
+
+export const MARKETING_EYEBROW = "Medical transport for hard-to-reach destinations";
+export const MARKETING_H1 = "Faster access. Better care.";
 
 /** Finance books only. Do not print on the public site. */
 export const PAYING_ENTITY = "MEDSTEAD LLC";

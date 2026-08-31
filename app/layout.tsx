@@ -1,28 +1,28 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { PUBLIC_LINE, TAGLINE } from "@/lib/constants";
 import "./globals.css";
 
-const sans = Source_Sans_3({
+const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const display = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: {
-    default: "MedStead — Faster access. Better care.",
+    default: "MedStead Transport — Faster access. Better care.",
     template: "%s · MedStead",
   },
   description: PUBLIC_LINE,
-  keywords: ["MedStead", "clinic supply", "medical freight", TAGLINE],
+  keywords: [
+    "MedStead",
+    "MedStead Transport",
+    "medical freight",
+    "hard-to-reach destinations",
+    TAGLINE,
+  ],
   icons: {
     icon: [
       { url: "/favicon.png", sizes: "32x32", type: "image/png" },
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable}`}>
+    <html lang="en" className={sans.variable}>
       <body className="font-sans">
         <Providers>{children}</Providers>
       </body>

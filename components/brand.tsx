@@ -32,8 +32,8 @@ export function Wordmark({
     >
       {/* Official lockup PNG — not the old SVG globe crop */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="MedStead" className={height} />
-      <span className="sr-only">MedStead — Faster access. Better care.</span>
+      <img src={src} alt="MedStead Transport" className={height} />
+      <span className="sr-only">MedStead Transport — Faster access. Better care.</span>
     </Link>
   );
 }

@@ -1,94 +1,110 @@
 import Link from "next/link";
-import { CONTACT_ORDERS, HUBS, MISSION, PUBLIC_LINE, TAGLINE, WAREHOUSE } from "@/lib/constants";
-import { PublicBottomNav } from "./public-bottom-nav";
+import {
+  APP_GET_STARTED,
+  APP_QUOTE,
+  APP_TRACK,
+  CONTACT_ORDERS,
+  MISSION,
+  PUBLIC_LINE,
+  TAGLINE,
+} from "@/lib/constants";
 import { Wordmark } from "./brand";
+import { MARKETING_NAV } from "./marketing";
 
 const SERVICES = [
-  { href: "/orders", label: "Orders & Packages" },
-  { href: "/shop-and-ship", label: "Shop & Ship" },
-  { href: "/freight", label: "Ship Now" },
-  { href: "/track", label: "Track Package" },
-  { href: "/freight", label: "Express Air freight" },
-  { href: "/freight", label: "Standard Sea freight" },
-  { href: "/track", label: "Package tracking" },
-  { href: "/warehouse", label: "US warehouse" },
-  { href: "/rewards", label: "Rewards program" },
-  { href: "/telehealth", label: "Telehealth partners" },
+  { href: "/freight", label: "Express Air" },
+  { href: "/freight", label: "Standard Sea" },
+  { href: "/freight", label: "Hard-to-reach pickup" },
+  { href: "/freight", label: "Customs Support" },
+  { href: APP_TRACK, label: "Live Tracking", external: true },
 ];
 
-const QUICK = [
-  { href: "/signup", label: "Sign up" },
-  { href: "/login", label: "Login" },
-  { href: "/demo", label: "Demo roles" },
-  { href: "/freight", label: "Ship Now" },
-  { href: "/contact", label: "Support" },
+const COMPANY = [
+  ...MARKETING_NAV,
+  { href: "/telehealth", label: "Telehealth" },
 ];
 
 export function Footer() {
   return (
-    <footer className="mt-20 border-t border-navy-900/10 bg-navy-950 text-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-4">
-        <div>
+    <footer className="mt-20 bg-navy-950 text-white">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 md:grid-cols-4">
+        <div className="md:col-span-2">
           <Wordmark light href="/" size="footer" />
-          <p className="mt-4 max-w-sm font-display text-lg leading-snug text-white">{MISSION}</p>
-          <p className="mt-3 text-sm leading-6 text-white/70">{PUBLIC_LINE}</p>
-          <a href={`mailto:${CONTACT_ORDERS}`} className="mt-3 block text-sm text-forest-300">
+          <p className="mt-5 max-w-md text-lg font-semibold leading-snug tracking-tight">
+            {MISSION}
+          </p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-white/70">{PUBLIC_LINE}</p>
+          <p className="mt-4 text-sm text-white/70">
+            We specialize in hard-to-reach destinations — medical cargo and healthcare access.
+          </p>
+          <a
+            href={`mailto:${CONTACT_ORDERS}`}
+            className="mt-4 inline-block text-sm font-semibold text-forest-300 hover:text-forest-200"
+          >
             {CONTACT_ORDERS}
           </a>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">Services</p>
-          <ul className="mt-3 space-y-2 text-sm text-white/80">
-            {SERVICES.map((s) => (
-              <li key={s.label}>
-                <Link href={s.href} className="hover:text-forest-300">
-                  {s.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">Quick links</p>
-          <ul className="mt-3 space-y-2 text-sm text-white/80">
-            {QUICK.map((s) => (
-              <li key={s.label}>
-                <Link href={s.href} className="hover:text-forest-300">
-                  {s.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">Hubs</p>
-          <ul className="mt-2 space-y-1 text-sm text-white/70">
-            {HUBS.active.map((h) => (
-              <li key={h.code}>
-                {h.name} <span className="text-white/40">({h.code})</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">Warehouse address</p>
-          <p className="mt-3 text-sm leading-6 text-white/80">{WAREHOUSE.line}</p>
-          <p className="mt-2 text-xs text-white/50">Suite FLL-C15 · Fort Lauderdale hub</p>
-          <p className="mt-4 text-xs leading-5 text-white/45">
-            MedStead is not a licensed customs broker. We coordinate pharmacy, telehealth,
-            medical-supply, and logistics for licensed healthcare businesses.
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">
+            Services
           </p>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">{TAGLINE}</p>
+          <ul className="mt-4 space-y-2.5 text-sm text-white/80">
+            {SERVICES.map((item) => (
+              <li key={item.label}>
+                {item.external ? (
+                  <a href={item.href} className="hover:text-forest-300">
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link href={item.href} className="hover:text-forest-300">
+                    {item.label}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">
+            Company
+          </p>
+          <ul className="mt-4 space-y-2.5 text-sm text-white/80">
+            {COMPANY.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="hover:text-forest-300">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">
+            App
+          </p>
+          <ul className="mt-3 space-y-2.5 text-sm text-white/80">
+            <li>
+              <a href={APP_GET_STARTED} className="hover:text-forest-300">
+                Get Started
+              </a>
+            </li>
+            <li>
+              <a href={APP_QUOTE} className="hover:text-forest-300">
+                Request a quote
+              </a>
+            </li>
+            <li>
+              <a href={APP_TRACK} className="hover:text-forest-300">
+                Track a shipment
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
-      <div className="border-t border-white/10 px-4 py-4 pb-20 text-center text-xs text-white/40 lg:pb-4">
-        <Link href="/demo" className="text-forest-300 hover:underline">
-          Demo logins
-        </Link>
-        <span className="mx-2">·</span>
-        MedStead · Markets in the USA and internationally
-        <span className="mx-2">·</span>
-        Add to Home Screen for phone ops and tracking
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p>MedStead · MedStead Transport · Hard-to-reach destinations</p>
+          <p className="font-semibold uppercase tracking-[0.16em] text-forest-300">{TAGLINE}</p>
+        </div>
       </div>
-      <PublicBottomNav />
     </footer>
   );
 }

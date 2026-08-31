@@ -1,65 +1,73 @@
 import { Footer } from "@/components/footer";
+import { ContactForm } from "@/components/contact-form";
+import { Eyebrow, GetStartedCta, QuoteCta, Section, TrackCta } from "@/components/marketing";
 import { PublicNav } from "@/components/public-nav";
-import { SupportForm } from "@/components/support-form";
-import { Button, Card, PageHeader } from "@/components/ui";
-import { CONTACT_ORDERS, HUBS, WAREHOUSE } from "@/lib/constants";
+import { CONTACT_ORDERS } from "@/lib/constants";
 
-export const metadata = { title: "Contact" };
+export const metadata = {
+  title: "Contact",
+  description: `Orders desk — ${CONTACT_ORDERS}`,
+};
 
 export default function ContactPage() {
   return (
-    <div>
+    <div className="bg-white">
       <PublicNav />
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <PageHeader
-          eyebrow="Orders desk"
-          title="Contact MedStead"
-          lede="Do not WhatsApp Clint, Del, ops, or finance. Work waiting on you is on Do this next. Email is only for exceptions."
-        />
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
-              In-app inbox
-            </p>
-            <p className="mt-3 text-sm leading-6 text-navy-800/70">
-              Sign in. The home screen is one queue: who it is, why it is waiting, one button.
-              Completing it hands the record to the next role. Clinic orders and logistics
-              shipments move together.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button href="/app">Do this next</Button>
-              <Button href="/demo" variant="ghost">
-                Demo roles
-              </Button>
-            </div>
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
-              Exception desk
-            </p>
-            <a href={`mailto:${CONTACT_ORDERS}`} className="mt-2 block text-lg text-navy-900">
+
+      <section className="bg-navy-950 text-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <Eyebrow light>Contact</Eyebrow>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+            Talk to the orders desk.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-white/75">
+            Email{" "}
+            <a href={`mailto:${CONTACT_ORDERS}`} className="font-semibold text-forest-300">
               {CONTACT_ORDERS}
             </a>
-            <p className="mt-2 text-sm leading-6 text-navy-800/70">{WAREHOUSE.line}</p>
-            <div className="mt-6">
-              <SupportForm />
-            </div>
-          </Card>
-          <Card className="p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
-              Hubs
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-navy-800/80">
-              {HUBS.active.map((h) => (
-                <li key={h.code}>
-                  <strong>{h.name}</strong> — {h.note}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-xs text-navy-800/50">
-              Next: {HUBS.next.map((h) => h.name).join(" → ")}
-            </p>
-          </Card>
+            . Quote and tracking live in the MedStead Transport app.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <GetStartedCta />
+            <QuoteCta variant="ghost-light" />
+            <TrackCta variant="ghost-light" />
+          </div>
         </div>
-      </div>
+      </section>
+
+      <Section className="py-20">
+        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <article className="rounded-3xl border border-navy-900/8 bg-white p-8 shadow-tile">
+            <Eyebrow>Direct</Eyebrow>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-navy-950">
+              {CONTACT_ORDERS}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-navy-800/70">
+              Use email for shipment questions, clinic interest, and anything the app cannot
+              answer yet. There is no phone tree and no public staff directory on this page.
+            </p>
+            <a
+              href={`mailto:${CONTACT_ORDERS}`}
+              className="mt-6 inline-flex min-h-tap items-center justify-center rounded-lg bg-navy-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800"
+            >
+              Email the desk
+            </a>
+          </article>
+          <article className="rounded-3xl border border-navy-900/8 bg-white p-8 shadow-tile">
+            <Eyebrow>Message</Eyebrow>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-navy-950">
+              Send a short note
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-navy-800/70">
+              Opens your mail app addressed to {CONTACT_ORDERS}. Nothing is stored on this page.
+            </p>
+            <div className="mt-6">
+              <ContactForm />
+            </div>
+          </article>
+        </div>
+      </Section>
+
       <Footer />
     </div>
   );
