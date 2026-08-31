@@ -51,7 +51,7 @@ Visit `/demo` and click a role. Password for **every** seeded user is `demo1234`
 
 ## Brand
 
-Header, login, footer, and ops use the MedStead Transport mark (`public/medstead-logo.svg`): globe, ship, truck with a green medical cross, plane, MEDSTEAD wordmark, TRANSPORT, FASTER ACCESS. BETTER CARE. Navy `#002147` / `#0B2545` and forest green `#2E7D32`. Favicon comes from that mark.
+Header, login, footer, and ops use Hairson’s official MedStead Transport lockup (`public/medstead-logo.png`): globe with the Americas, cargo ship (green containers), semi-truck with a green medical cross, navy jet, navy/green motion arcs, MEDSTEAD (green cross in the D), TRANSPORT, FASTER ACCESS. BETTER CARE. Phone header uses a crop of that PNG (`medstead-compact.png`). Favicon and PWA icons are square crops of the same artwork. Navy `#002147` / `#0B2545` and forest green `#2E7D32`. No invented sublines.
 
 ## Do this next
 

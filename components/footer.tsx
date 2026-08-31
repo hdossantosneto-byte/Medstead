@@ -29,7 +29,7 @@ export function Footer() {
     <footer className="mt-20 border-t border-navy-900/10 bg-navy-950 text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-4">
         <div>
-          <Wordmark light href="/" />
+          <Wordmark light href="/" size="footer" />
           <p className="mt-4 max-w-sm font-display text-lg leading-snug text-white">{MISSION}</p>
           <p className="mt-3 text-sm leading-6 text-white/70">{PUBLIC_LINE}</p>
           <a href={`mailto:${CONTACT_ORDERS}`} className="mt-3 block text-sm text-forest-300">

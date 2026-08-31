@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Footer } from "@/components/footer";
 import { PublicNav } from "@/components/public-nav";
+import { Wordmark } from "@/components/brand";
 import { Badge, Button, Card } from "@/components/ui";
 import {
   CONTACT_ORDERS,
@@ -16,7 +17,10 @@ export default function HomePage() {
   return (
     <div>
       <PublicNav />
-      <section className="mx-auto max-w-6xl px-4 pb-8 pt-14 md:pt-20">
+      <section className="mx-auto max-w-6xl px-4 pb-8 pt-10 md:pt-16">
+        <div className="mb-8">
+          <Wordmark size="lockup" />
+        </div>
         <Badge tone="teal">USA and international clinic markets</Badge>
         <h1 className="mt-5 max-w-4xl font-display text-3xl leading-tight text-navy-900 sm:text-4xl md:text-5xl">
           {MISSION}
