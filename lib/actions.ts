@@ -17,8 +17,10 @@ import {
   GATE_LABEL,
   GATE_ORDER,
   SHIPMENT_STATUSES,
+  CURRENT_FLEET_ASSIGN,
   WELCOME_POINTS,
 } from "./constants";
+import { fleetLine } from "./fleet";
 import { prisma } from "./prisma";
 import { unitPriceForQty } from "./pricing";
 import { auth, requireRole, requireUser, clinicApproved } from "./session";
@@ -613,7 +615,68 @@ async function advisePilot(flightId: string, actorLine: string) {
   });
 }
 
-export async function dispatchFlight(shipmentId: string) {
+async function attachAircraft(flightId: string, aircraftId?: string | null) {
+  if (!aircraftId) return { ok: true as const };
+  const ac = await prisma.aircraft.findUnique({ where: { id: aircraftId } });
+  if (!ac) return { error: "Aircraft not found." };
+  if (ac.status !== "CURRENT") return { error: "Pick a current-fleet aircraft. MX and down stay on the ground." };
+  await prisma.flight.update({
+    where: { id: flightId },
+    data: { aircraftId: ac.id, aircraftNote: fleetLine(ac) },
+  });
+  return { ok: true as const };
+}
+
+export async function addAircraft(form: {
+  name: string;
+  type?: string;
+  tailNumber?: string;
+  homeBase?: string;
+}) {
+  const actor = await requireUser();
+  const allowed = actor.role === "MEDSTEAD_ADMIN" || (actor.role === "OPS" && isDel(actor));
+  if (!allowed) return { error: "Only Del or admin can add a current-fleet aircraft." };
+  const name = form.name.trim();
+  const type = form.type?.trim() || null;
+  const tailNumber = form.tailNumber?.trim().toUpperCase() || null;
+  const homeBase = (form.homeBase?.trim().toUpperCase() || "FLL").slice(0, 8);
+  if (!name) return { error: "Callsign or name is required." };
+  const blocked = `${name} ${type ?? ""}`.toLowerCase();
+  if (/\b(cessna 402|islander|king air|flying[- ]club)\b/.test(blocked)) {
+    return { error: "That type is not MedStead fleet unless Hairson names it." };
+  }
+  if (tailNumber) {
+    const taken = await prisma.aircraft.findUnique({ where: { tailNumber } });
+    if (taken) return { error: "That tail is already on the current fleet." };
+  }
+  await prisma.aircraft.create({
+    data: {
+      name,
+      type,
+      tailNumber,
+      homeBase,
+      status: "CURRENT",
+      corridors: "FLL_NAS,FLL_FPO",
+    },
+  });
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function assignAircraft(flightId: string, aircraftId: string) {
+  const actor = await requireRole(["OPS", "MEDSTEAD_ADMIN"]);
+  if (actor.role === "OPS" && !isDel(actor)) {
+    return { error: "Only Del assigns a current-fleet aircraft." };
+  }
+  const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+  if (!flight) return { error: "Trip not found." };
+  const attached = await attachAircraft(flightId, aircraftId);
+  if ("error" in attached) return attached;
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function dispatchFlight(shipmentId: string, aircraftId?: string) {
   const actor = await requireRole(["OPS"]);
   if (!isDel(actor)) return { error: "Only Del dispatches flights. Warehouse ops pick and pack." };
   const shipment = await prisma.shipment.findUnique({
@@ -654,6 +717,7 @@ export async function dispatchFlight(shipmentId: string) {
         origin: "FLL",
         destination: shipment.destination,
         dispatchedAt: new Date(),
+        aircraftNote: CURRENT_FLEET_ASSIGN,
         activityLine: "Del dispatched flight · doctor does not block cargo.",
       },
     });
@@ -673,6 +737,9 @@ export async function dispatchFlight(shipmentId: string) {
       },
     });
   }
+
+  const attached = await attachAircraft(flight.id, aircraftId);
+  if ("error" in attached) return attached;
 
   const line =
     "Del dispatched flight · package is In Transit. Public clock is on. Doctor does not need a call.";
@@ -777,7 +844,7 @@ export async function requestAirTrip(form: {
       custodyNote: rescue ? form.custodyNote?.trim() || "Chain of custody open · in-app only." : null,
       temperatureNote: rescue ? form.temperatureNote?.trim() || "Temperature note TBD." : null,
       assignedPilotId: (await defaultPilotId()) ?? undefined,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine: rescue
         ? "TIME-CRITICAL rescue organ trip opened · dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app."
         : tripType === "DOCTOR_CHARTER"
@@ -810,7 +877,7 @@ export async function scheduleAirTrip(flightId: string) {
   return { ok: true };
 }
 
-export async function dispatchAirTrip(flightId: string) {
+export async function dispatchAirTrip(flightId: string, aircraftId?: string) {
   const actor = await requireRole(["OPS"]);
   if (!isDel(actor)) return { error: "Only Del dispatches. Warehouse ops pick and pack." };
   const flight = await prisma.flight.findUnique({
@@ -836,6 +903,8 @@ export async function dispatchAirTrip(flightId: string) {
       activityLine: "Del dispatched MTG Airlines trip · doctor does not block the air arm.",
     },
   });
+  const attached = await attachAircraft(flightId, aircraftId);
+  if ("error" in attached) return attached;
   await advisePilot(flightId, "Del dispatched ·");
   revalidateApp();
   return { ok: true, flightCode: flight.flightCode };
@@ -933,7 +1002,7 @@ export async function ingestCall(input: {
       custodyNote: rescue ? "Chain of custody open · phone intake · in-app only." : null,
       temperatureNote: rescue ? "Temperature note from the call. No patient identifiers." : null,
       assignedPilotId: (await defaultPilotId()) ?? undefined,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine: rescue
         ? `TIME-CRITICAL ${phoneLine}`
         : phoneLine,
@@ -1084,7 +1153,7 @@ export async function bookSalesEvent(input: {
         passengerNote: `${account.name} — doctor charter day`,
         purpose: "Sales booked a doctor charter day. Del schedules. Not a clinic supply order.",
         assignedPilotId: (await defaultPilotId()) ?? undefined,
-        aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+        aircraftNote: CURRENT_FLEET_ASSIGN,
         activityLine: "Sales handed a charter day to Del. No WhatsApp.",
       },
     });
@@ -1200,7 +1269,7 @@ export async function salesRequestCharter(accountId: string) {
       passengerNote: `${account.name} — sales charter request`,
       purpose: "Sales requested a charter. Del owns dispatch. Not a clinic supply order.",
       assignedPilotId: (await defaultPilotId()) ?? undefined,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine: "Sales requested a charter · waiting on Del to schedule. No WhatsApp.",
     },
   });
@@ -1304,6 +1373,7 @@ export async function runNextAction(input: {
   accountId?: string;
   eventId?: string;
   eventKind?: "DINNER" | "SITE_VISIT" | "WAREHOUSE_TOUR" | "CONFERENCE" | "DOCTOR_CHARTER_DAY";
+  aircraftId?: string;
 }) {
   if (input.kind === "open") return { ok: true };
 
@@ -1524,10 +1594,10 @@ export async function runNextAction(input: {
     return setFlightPhase(input.flightId, "T6_GO_NO_GO", "GO");
   }
   if (input.kind === "dispatch_flight" && input.shipmentId) {
-    return dispatchFlight(input.shipmentId);
+    return dispatchFlight(input.shipmentId, input.aircraftId);
   }
   if (input.kind === "dispatch_air_trip" && input.flightId) {
-    return dispatchAirTrip(input.flightId);
+    return dispatchAirTrip(input.flightId, input.aircraftId);
   }
   if (input.kind === "schedule_charter" && input.flightId) {
     return scheduleAirTrip(input.flightId);

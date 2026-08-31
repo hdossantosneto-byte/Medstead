@@ -242,7 +242,11 @@ export const QUOTE_STATUS_LABEL: Record<string, string> = {
 
 export const AIR_ARM = "MTG Airlines";
 export const PART135_BANNER =
-  "NOT LIVE / FUTURE 135. MTG Airlines is not a certificated Part 135 operator in this app. No certificate number is on file. Hairson fills aircraft, crew, duty/rest, ops specs, and maintenance later.";
+  "NOT LIVE / FUTURE 135. MTG Airlines is not a certificated Part 135 operator in this app. No certificate number is on file.";
+
+export const CURRENT_FLEET_ASSIGN = "Current fleet · Del assigns";
+export const PART135_FLEET_LINE = "Current fleet (operating). Part 135 not live.";
+export const PART135_NOT_ON_FILE = "Not on file for 135.";
 
 export const TRIP_TYPE_LABEL: Record<string, string> = {
   MEDICAL_CARGO: "Medical cargo",

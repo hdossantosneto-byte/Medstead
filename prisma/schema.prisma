@@ -395,10 +395,31 @@ model Flight {
   assignedPilotId  String?
   assignedPilot    User?          @relation("AssignedPilot", fields: [assignedPilotId], references: [id])
   pilotAdvisedAt   DateTime?
+  aircraftId       String?
+  aircraft         Aircraft?      @relation(fields: [aircraftId], references: [id])
   createdAt        DateTime       @default(now())
   shipments        Shipment[]
   salesEvents      SalesEvent[]
   callLogs         CallLog[]
+}
+
+enum AircraftStatus {
+  CURRENT
+  MX
+  DOWN
+}
+
+/// Operating fleet. Empty is honest when no real tails are on file. Do not invent N-numbers.
+model Aircraft {
+  id         String         @id @default(cuid())
+  tailNumber String?        @unique
+  type       String?
+  name       String
+  homeBase   String         @default("FLL")
+  status     AircraftStatus @default(CURRENT)
+  corridors  String         @default("FLL_NAS,FLL_FPO")
+  createdAt  DateTime       @default(now())
+  flights    Flight[]
 }
 
 /// Structure only. Never claim a live Part 135 certificate. No certificate number.

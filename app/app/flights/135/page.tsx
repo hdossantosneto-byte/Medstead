@@ -1,5 +1,6 @@
+import { FleetList } from "@/components/fleet-forms";
 import { Badge, Card, Notice, PageHeader } from "@/components/ui";
-import { AIR_ARM, PART135_BANNER } from "@/lib/constants";
+import { AIR_ARM, PART135_BANNER, PART135_FLEET_LINE, PART135_NOT_ON_FILE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -24,12 +25,15 @@ export default async function Part135Page() {
       cargoOps: false,
     };
 
+  const fleet = await prisma.aircraft.findMany({
+    orderBy: [{ status: "asc" }, { name: "asc" }],
+  });
+
   const rows = [
-    { label: "Aircraft", value: board.aircraftNote || "Placeholder — Hairson fills later." },
-    { label: "Crew", value: board.crewNote || "Placeholder — Hairson fills later." },
-    { label: "Duty / rest", value: board.dutyRestNote || "Placeholder — Hairson fills later." },
-    { label: "Ops specs", value: board.opsSpecsNote || "Placeholder — Hairson fills later." },
-    { label: "Maintenance", value: board.maintenanceNote || "Placeholder — Hairson fills later." },
+    { label: "Crew", value: board.crewNote || PART135_NOT_ON_FILE },
+    { label: "Duty / rest", value: board.dutyRestNote || PART135_NOT_ON_FILE },
+    { label: "Ops specs", value: board.opsSpecsNote || PART135_NOT_ON_FILE },
+    { label: "Maintenance", value: board.maintenanceNote || PART135_NOT_ON_FILE },
   ];
 
   return (
@@ -54,6 +58,11 @@ export default async function Part135Page() {
             Cargo ops {board.cargoOps ? "listed" : "placeholder"}
           </Badge>
         </div>
+      </Card>
+      <Card className="mt-4 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">Aircraft</p>
+        <p className="mt-2 text-sm leading-6 text-navy-800">{PART135_FLEET_LINE}</p>
+        <FleetList aircraft={fleet} />
       </Card>
       <div className="mt-4 grid gap-3">
         {rows.map((r) => (

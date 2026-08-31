@@ -11,7 +11,7 @@ import {
 import bcrypt from "bcryptjs";
 import { loadLegalIntlRows } from "./legal-catalog";
 import { CLINIC_DRIVES_SHIPMENT, publicClockOn } from "../lib/handoff";
-import { PAYING_ENTITY, PAY_METHOD_ZELLE } from "../lib/constants";
+import { CURRENT_FLEET_ASSIGN, PAYING_ENTITY, PAY_METHOD_ZELLE } from "../lib/constants";
 
 const prisma = new PrismaClient();
 const PASSWORD = "demo1234";
@@ -84,6 +84,7 @@ async function main() {
   await prisma.shipment.deleteMany();
   await prisma.callLog.deleteMany();
   await prisma.flight.deleteMany();
+  await prisma.aircraft.deleteMany();
   await prisma.freightQuote.deleteMany();
   await prisma.clinicOrder.deleteMany();
   await prisma.inventoryItem.deleteMany();
@@ -843,7 +844,7 @@ async function main() {
       passengerNote: "Hairson + one MedStead seat",
       purpose: "Company / business travel to the Nassau clinic corridor",
       assignedPilotId: pilotId,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine: "Company travel scheduled · Del dispatch next. Finance cannot fly.",
     },
   });
@@ -862,7 +863,7 @@ async function main() {
       passengerNote: "Household crate for Marcus Reed",
       purpose: "Personal goods on a company flight — not a clinic supply order",
       assignedPilotId: pilotId,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine: "Personal goods request · waiting on Del to schedule. No WhatsApp.",
     },
   });
@@ -881,7 +882,7 @@ async function main() {
       passengerNote: "Dr. James Bethel — passenger charter",
       purpose: "Charter a flight to a doctor — not a clinic supply order",
       assignedPilotId: pilotId,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine:
         "Doctor charter requested · not a clinic supply order. Waiting on Del to schedule. No WhatsApp.",
     },
@@ -906,7 +907,7 @@ async function main() {
       custodyNote: "Chain of custody open · FLL C15 → NAS. In-app only.",
       temperatureNote: "Keep the cold-chain note on this card. In-app only.",
       assignedPilotId: pilotId,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine:
         "TIME-CRITICAL rescue organ trip · Phone intake · Nassau Transfer Desk · routed to Del. Do not re-type. No patient name. Not an OPO or UNOS claim.",
     },
@@ -946,7 +947,7 @@ async function main() {
       passengerNote: "Phone intake · Freeport Clinic Hub. No patient name.",
       purpose: "Medical cargo from the call center. Del dispatches. Doctor does not block cargo.",
       assignedPilotId: pilotId,
-      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      aircraftNote: CURRENT_FLEET_ASSIGN,
       activityLine: "Phone intake · Freeport Clinic Hub · +1 242 555 0188 · routed to Del. Do not re-type.",
     },
   });
@@ -1190,6 +1191,18 @@ async function main() {
   }
   if (legal.length < 40) {
     throw new Error(`Expected 40+ legal IV/supply rows, parsed ${legal.length}`);
+  }
+
+  const fleet = await prisma.aircraft.findMany();
+  if (fleet.length > 0) {
+    throw new Error("Do not seed invented tails. Current fleet stays empty until Hairson names one.");
+  }
+  const airNotes = await prisma.flight.findMany({ select: { aircraftNote: true, flightCode: true } });
+  const badNote = airNotes.find(
+    (f) => /tbd|hairson fills|placeholder|future 135|n\d{2,}/i.test(f.aircraftNote ?? ""),
+  );
+  if (badNote) {
+    throw new Error(`Flight ${badNote.flightCode} used a placeholder or invented tail note.`);
   }
 
   const matias = await prisma.payee.create({

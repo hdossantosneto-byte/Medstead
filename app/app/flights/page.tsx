@@ -2,16 +2,17 @@ import Link from "next/link";
 import { CallIntakeForm } from "@/components/call-intake-form";
 import { DedicatedNextButton } from "@/components/next-queue";
 import { Badge, Button, Card, PageHeader } from "@/components/ui";
+import { AddAircraftForm, AssignAircraftForm, FleetList } from "@/components/fleet-forms";
 import {
   AIR_ARM,
   AIR_TRIP_STATUS_LABEL,
-  AIRCRAFT_ROUTING,
   CORRIDOR_LABEL,
   CORRIDOR_LIVE,
   FLIGHT_PHASE_LABEL,
   PART135_BANNER,
   TRIP_TYPE_LABEL,
 } from "@/lib/constants";
+import { flightAircraftLine } from "@/lib/fleet";
 import { clockOn } from "@/lib/format";
 import { isDel, isPilot } from "@/lib/org";
 import { loadQueue } from "@/lib/queue";
@@ -44,12 +45,13 @@ export default async function FlightsPage() {
   const del = isDel(user);
   const pilot = isPilot(user);
   const queue = await loadQueue(user);
-  const [flights, ready] = await Promise.all([
+  const [flights, ready, fleet] = await Promise.all([
     prisma.flight.findMany({
       include: {
         shipments: { include: { clinicOrder: { include: { clinic: true } } } },
         requestedBy: true,
         assignedPilot: true,
+        aircraft: true,
         callLogs: true,
       },
       orderBy: [{ timeCritical: "desc" }, { createdAt: "desc" }],
@@ -62,6 +64,7 @@ export default async function FlightsPage() {
       include: { clinicOrder: { include: { clinic: true, user: true } }, gates: true, flight: true },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.aircraft.findMany({ orderBy: [{ status: "asc" }, { name: "asc" }] }),
   ]);
 
   const dispatchable = ready.filter((s) => {
@@ -136,16 +139,14 @@ export default async function FlightsPage() {
 
       <Card className="mt-4 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
-          Aircraft routing
+          Current fleet
         </p>
-        <ul className="mt-3 space-y-2 text-sm text-navy-800">
-          {AIRCRAFT_ROUTING.map((r) => (
-            <li key={r.kind} className="flex justify-between gap-3">
-              <span>{r.kind}</span>
-              <span className="text-navy-800/60">{r.route}</span>
-            </li>
-          ))}
-        </ul>
+        <p className="mt-2 text-sm text-navy-800/70">
+          Operating aircraft for cargo, travel, personal goods, doctor charter, and rescue. This is
+          not trip-type routing. Part 135 is not live. The current fleet is not a 135 certificate.
+        </p>
+        <FleetList aircraft={fleet} />
+        {(del || user.role === "MEDSTEAD_ADMIN") && <AddAircraftForm />}
       </Card>
 
       {del && (
@@ -239,6 +240,9 @@ export default async function FlightsPage() {
                   {clock && (
                     <p className="mt-3 font-display text-3xl text-red-700">{clock}</p>
                   )}
+                  <p className="mt-2 text-sm text-navy-800/70">
+                    Aircraft: {flightAircraftLine(f.aircraft, f.aircraftNote)}
+                  </p>
                   {f.purpose && <p className="mt-3 text-sm text-navy-800/80">{f.purpose}</p>}
                   {f.passengerNote && (
                     <p className="mt-1 text-sm text-navy-800/60">{f.passengerNote}</p>
@@ -259,6 +263,13 @@ export default async function FlightsPage() {
                     <p className="mt-2 text-xs text-navy-800/50">Opened by {f.requestedBy.name}</p>
                   )}
                   <div className="mt-4 grid gap-3">
+                    {del && (
+                      <AssignAircraftForm
+                        flightId={f.id}
+                        aircraft={fleet}
+                        currentId={f.aircraftId}
+                      />
+                    )}
                     {del && notify && (
                       <DedicatedNextButton
                         kind="notify_pilots"
