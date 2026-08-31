@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { runNextAction } from "@/lib/actions";
 import type { QueueItem, QueueKind } from "@/lib/queue";
+import { SALES_EVENT_LABEL } from "@/lib/constants";
 import { Button, Card, inputClass } from "@/components/ui";
 
 export function NextQueue({ items, hero }: { items: QueueItem[]; hero?: boolean }) {
@@ -32,6 +33,7 @@ function QueueCard({ item, hero }: { item: QueueItem; hero?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [date, setDate] = useState("");
+  const [eventKind, setEventKind] = useState(item.eventKind ?? "DINNER");
 
   async function go() {
     if (item.kind === "open") {
@@ -51,6 +53,9 @@ function QueueCard({ item, hero }: { item: QueueItem; hero?: boolean }) {
       date: item.needsDate ? date : undefined,
       flightId: item.flightId,
       quoteId: item.quoteId,
+      accountId: item.accountId,
+      eventId: item.eventId,
+      eventKind: item.needsEventKind ? eventKind : item.eventKind,
     });
     setBusy(false);
     if (res && "error" in res && res.error) {
@@ -66,6 +71,21 @@ function QueueCard({ item, hero }: { item: QueueItem; hero?: boolean }) {
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">{item.who}</p>
       <h2 className={`mt-2 font-display text-navy-900 ${hero ? "text-3xl" : "text-2xl"}`}>{item.what}</h2>
       <p className="mt-2 text-sm leading-6 text-navy-800/70">{item.why}</p>
+      {item.needsEventKind && (
+        <select
+          className={`${inputClass} mt-4 max-w-xs`}
+          value={eventKind}
+          onChange={(e) =>
+            setEventKind(e.target.value as NonNullable<QueueItem["eventKind"]>)
+          }
+        >
+          {Object.entries(SALES_EVENT_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+      )}
       {item.needsDate && (
         <input
           className={`${inputClass} mt-4 max-w-xs`}
@@ -101,6 +121,8 @@ export function DedicatedNextButton({
   crmId,
   flightId,
   quoteId,
+  accountId,
+  eventId,
   gate,
 }: {
   kind: QueueKind;
@@ -112,6 +134,8 @@ export function DedicatedNextButton({
   crmId?: string;
   flightId?: string;
   quoteId?: string;
+  accountId?: string;
+  eventId?: string;
   gate?: import("@prisma/client").GateName;
 }) {
   const router = useRouter();
@@ -135,6 +159,8 @@ export function DedicatedNextButton({
             crmId,
             flightId,
             quoteId,
+            accountId,
+            eventId,
             gate,
           });
           setBusy(false);

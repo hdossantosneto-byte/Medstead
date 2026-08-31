@@ -45,8 +45,11 @@ export function osArmsFor(role: Role) {
       };
     }
     if (arm.title === "Company management") {
+      if (role === "SALES") {
+        return { ...arm, href: "/app/sales", body: "Sales accounts, follow-ups, events. Not the admin eligibility desk." };
+      }
       if (role === "MEDSTEAD_ADMIN") {
-        return { ...arm, href: "/app/admin/crm" };
+        return { ...arm, href: "/app/sales", body: "Sales desk plus clinic approvals. One login." };
       }
       return {
         ...arm,

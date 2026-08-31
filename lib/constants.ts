@@ -59,6 +59,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   OPS: "Medication operations",
   FINANCE: "Finance",
   PILOT: "Pilot",
+  SALES: "Sales",
 };
 
 export const CLINIC_ROLES: Role[] = ["CLINIC_ADMIN", "DOCTOR", "PHARMACY"];
@@ -273,6 +274,29 @@ export const OS_ARMS = [
     body: "CRM, roles, clinic approvals, next-action queues. One login.",
   },
 ] as const;
+
+export const SALES_STAGE_LABEL: Record<string, string> = {
+  PROSPECT: "Prospect",
+  TALKING: "Talking",
+  EVENT_SET: "Event set",
+  BOOKED: "Booked",
+  ACTIVE: "Active",
+};
+
+export const SALES_KIND_LABEL: Record<string, string> = {
+  CLINIC: "Clinic",
+  DOCTOR: "Doctor",
+  WAREHOUSE: "3PL / warehouse",
+  CHARTER: "Charter / travel",
+};
+
+export const SALES_EVENT_LABEL: Record<string, string> = {
+  DINNER: "Dinner",
+  SITE_VISIT: "Site visit",
+  WAREHOUSE_TOUR: "Warehouse tour",
+  CONFERENCE: "Conference",
+  DOCTOR_CHARTER_DAY: "Doctor charter day",
+};
 
 export const AIR_TRIP_STATUS_LABEL: Record<string, string> = {
   REQUESTED: "Requested",

@@ -40,6 +40,11 @@ export type QueueKind =
   | "notify_pilots"
   | "acknowledge_brief"
   | "approve_quote"
+  | "log_followup"
+  | "book_event"
+  | "convert_order"
+  | "request_charter"
+  | "host_warehouse_visit"
   | "open";
 
 export type QueueItem = {
@@ -58,7 +63,11 @@ export type QueueItem = {
   gate?: GateName;
   flightId?: string;
   quoteId?: string;
+  accountId?: string;
+  eventId?: string;
+  eventKind?: "DINNER" | "SITE_VISIT" | "WAREHOUSE_TOUR" | "CONFERENCE" | "DOCTOR_CHARTER_DAY";
   needsDate?: boolean;
+  needsEventKind?: boolean;
 };
 
 function gatesGreen(gates: Array<{ name: GateName; state: string }>) {
@@ -746,6 +755,99 @@ export async function loadQueue(user: {
       kind: "open",
       href: "/app/travel",
     });
+  }
+
+  if (user.role === "OPS") {
+    const tours = await prisma.salesEvent.findMany({
+      where: { kind: "WAREHOUSE_TOUR", status: "BOOKED", handedTo: "OPS" },
+      include: { account: true },
+      orderBy: { occursAt: "asc" },
+    });
+    for (const ev of tours) {
+      items.push({
+        id: `tour-${ev.id}`,
+        who: ev.account.name,
+        what: `Host warehouse tour · ${ev.title}`,
+        why: "Sales booked this visit. Mark done in-app when they walk C15. No WhatsApp.",
+        actionLabel: "Mark tour done",
+        kind: "host_warehouse_visit",
+        href: "/app/ops",
+        eventId: ev.id,
+      });
+    }
+  }
+
+  if (user.role === "SALES") {
+    const accounts = await prisma.salesAccount.findMany({
+      include: {
+        clinic: { include: { orders: { orderBy: { createdAt: "desc" }, take: 1 } } },
+        events: { where: { status: { in: ["PLANNED", "BOOKED"] } } },
+        followUps: { where: { doneAt: null }, orderBy: { dueAt: "asc" } },
+      },
+      orderBy: { updatedAt: "asc" },
+    });
+    const now = Date.now();
+    for (const a of accounts) {
+      const due = a.followUps[0];
+      const overdue = due && due.dueAt.getTime() <= now;
+      const lastOrder = a.clinic?.orders[0];
+      const quiet =
+        Boolean(a.clinicId) &&
+        (!lastOrder || now - lastOrder.createdAt.getTime() > 14 * 86400000);
+      if (overdue || (quiet && a.stage === "ACTIVE")) {
+        items.push({
+          id: `sfollow-${a.id}`,
+          who: a.name,
+          what: quiet && a.stage === "ACTIVE" ? `${a.name} has gone quiet` : `Follow up ${a.name}`,
+          why: quiet
+            ? "No recent clinic order. Log the conversation in-app and set the next date."
+            : due?.note || "Overdue follow-up. One button. No WhatsApp.",
+          actionLabel: "Log follow-up",
+          kind: "log_followup",
+          href: `/app/sales/${a.id}`,
+          accountId: a.id,
+        });
+      } else if (
+        (a.stage === "TALKING" || a.stage === "PROSPECT") &&
+        a.events.length === 0
+      ) {
+        items.push({
+          id: `sevt-${a.id}`,
+          who: a.name,
+          what: `Book an event with ${a.name}`,
+          why: "Dinner, site visit, warehouse tour, conference, or doctor charter day.",
+          actionLabel: "Book event",
+          kind: "book_event",
+          href: `/app/sales/${a.id}`,
+          accountId: a.id,
+          needsDate: true,
+          needsEventKind: true,
+          eventKind: a.kind === "CHARTER" ? "DOCTOR_CHARTER_DAY" : a.kind === "WAREHOUSE" ? "WAREHOUSE_TOUR" : "DINNER",
+        });
+      } else if (a.stage === "BOOKED" && a.kind === "CHARTER") {
+        items.push({
+          id: `scharter-${a.id}`,
+          who: a.name,
+          what: `Request a charter for ${a.name}`,
+          why: "Hands Del a doctor-charter next action. Finance cannot fly.",
+          actionLabel: "Request charter",
+          kind: "request_charter",
+          href: `/app/sales/${a.id}`,
+          accountId: a.id,
+        });
+      } else if (a.stage === "BOOKED" && (a.kind === "CLINIC" || a.kind === "DOCTOR") && a.clinicId) {
+        items.push({
+          id: `sord-${a.id}`,
+          who: a.name,
+          what: `Convert ${a.name} to a clinic order`,
+          why: "Marks the account ready to shop. No invented revenue. Clinic places the order.",
+          actionLabel: "Convert to clinic order",
+          kind: "convert_order",
+          href: `/app/sales/${a.id}`,
+          accountId: a.id,
+        });
+      }
+    }
   }
 
   if (user.role === "PILOT") {

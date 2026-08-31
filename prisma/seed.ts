@@ -89,6 +89,10 @@ async function main() {
   await prisma.priceTier.deleteMany();
   await prisma.product.deleteMany();
   await prisma.crmAccount.deleteMany();
+  await prisma.salesActivity.deleteMany();
+  await prisma.salesFollowUp.deleteMany();
+  await prisma.salesEvent.deleteMany();
+  await prisma.salesAccount.deleteMany();
   await prisma.user.deleteMany();
   await prisma.clinic.deleteMany();
   await prisma.shipmentSequence.deleteMany();
@@ -299,6 +303,12 @@ async function main() {
       email: "pilot@medstead.demo",
       name: "Riley Chen",
       role: "PILOT",
+      active: true,
+    },
+    {
+      email: "sales@medstead.demo",
+      name: "Camila Ortiz",
+      role: "SALES",
       active: true,
     },
     {
@@ -901,6 +911,147 @@ async function main() {
     },
   });
 
+  const salesId = createdUsers["sales@medstead.demo"];
+  const charterFlight = await prisma.flight.findUnique({ where: { flightCode: "MTG-A-CHTR-003" } });
+
+  const harborSales = await prisma.salesAccount.create({
+    data: {
+      name: "Harbor Wellness",
+      kind: "CLINIC",
+      stage: "ACTIVE",
+      market: "USA",
+      country: "United States",
+      ownerId: salesId,
+      clinicId: harbor.id,
+      lastTouchAt: new Date(),
+      nextFollowUpAt: new Date(Date.now() + 10 * 86400000),
+      activityLine: "Active clinic. Orders land on this timeline. No revenue totals.",
+    },
+  });
+  await prisma.salesFollowUp.create({
+    data: {
+      accountId: harborSales.id,
+      dueAt: new Date(Date.now() + 10 * 86400000),
+      kind: "follow_up",
+      note: "Check repeat volume after the next shop.",
+    },
+  });
+  await prisma.salesActivity.create({
+    data: {
+      accountId: harborSales.id,
+      kind: "note",
+      title: "Account opened",
+      body: "Linked to live Harbor orders. Sales owns the conversation.",
+    },
+  });
+
+  const bethelSales = await prisma.salesAccount.create({
+    data: {
+      name: "Bethel Medical",
+      kind: "DOCTOR",
+      stage: "ACTIVE",
+      market: "INTL",
+      country: "Bahamas",
+      ownerId: salesId,
+      clinicId: bethel.id,
+      lastTouchAt: new Date(),
+      nextFollowUpAt: new Date(Date.now() + 12 * 86400000),
+      activityLine: "Doctor charter is on the air board. Sales sees dispatch here.",
+    },
+  });
+  if (charterFlight) {
+    await prisma.salesEvent.create({
+      data: {
+        accountId: bethelSales.id,
+        kind: "DOCTOR_CHARTER_DAY",
+        title: "Bethel charter day",
+        occursAt: new Date("2026-09-12T16:00:00.000Z"),
+        status: "BOOKED",
+        handedTo: "DEL",
+        flightId: charterFlight.id,
+        activityLine: "Linked to MTG-A-CHTR-003. Del owns schedule.",
+      },
+    });
+    await prisma.salesActivity.create({
+      data: {
+        accountId: bethelSales.id,
+        kind: "flight",
+        title: charterFlight.flightCode,
+        body: "Doctor charter requested. When Del dispatches, it stays on this feed.",
+        href: "/app/flights",
+      },
+    });
+  }
+
+  const coral = await prisma.salesAccount.create({
+    data: {
+      name: "Coral Charter desk",
+      kind: "CHARTER",
+      stage: "TALKING",
+      market: "INTL",
+      country: "Bahamas",
+      ownerId: salesId,
+      nextFollowUpAt: new Date(Date.now() + 2 * 86400000),
+      activityLine: "Talking · book dinner or a doctor charter day next.",
+    },
+  });
+  await prisma.salesFollowUp.create({
+    data: {
+      accountId: coral.id,
+      dueAt: new Date(Date.now() + 2 * 86400000),
+      kind: "book_event",
+      note: "Book the first event.",
+    },
+  });
+
+  const warehouseSales = await prisma.salesAccount.create({
+    data: {
+      name: "Marcus Reed · C15 forwarder",
+      kind: "WAREHOUSE",
+      stage: "BOOKED",
+      market: "USA",
+      country: "United States",
+      ownerId: salesId,
+      customerId: customerUserId,
+      lastTouchAt: new Date(),
+      nextFollowUpAt: new Date("2026-09-08T16:00:00.000Z"),
+      activityLine: "Warehouse tour booked · handed to Chris. No WhatsApp.",
+    },
+  });
+  await prisma.salesEvent.create({
+    data: {
+      accountId: warehouseSales.id,
+      kind: "WAREHOUSE_TOUR",
+      title: "C15 walk-through",
+      occursAt: new Date("2026-09-08T16:00:00.000Z"),
+      status: "BOOKED",
+      handedTo: "OPS",
+      activityLine: "Sales booked this visit. Chris marks it done.",
+    },
+  });
+
+  const quietClinic = await prisma.salesAccount.create({
+    data: {
+      name: "360 Wellness",
+      kind: "CLINIC",
+      stage: "ACTIVE",
+      market: "INTL",
+      country: "Barbados",
+      ownerId: salesId,
+      clinicId: wellness360.id,
+      nextFollowUpAt: new Date(Date.now() - 2 * 86400000),
+      activityLine: "Gone quiet — no clinic order yet. Log the follow-up.",
+    },
+  });
+  await prisma.salesFollowUp.create({
+    data: {
+      accountId: quietClinic.id,
+      dueAt: new Date(Date.now() - 2 * 86400000),
+      kind: "follow_up",
+      note: "Pharmacy seat still pending admin. Stay on them in-app.",
+    },
+  });
+
   const ivCount = await prisma.product.count({ where: { category: "IV" } });
   const supplyCount = await prisma.product.count({ where: { category: "SUPPLIES" } });
   const nonRxCount = await prisma.product.count({ where: { category: "NON_RX" } });
@@ -989,7 +1140,7 @@ async function main() {
 
   const userCount = await prisma.user.count();
   console.log(
-    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + orders + payroll dates + MTG Airlines trips.`,
+    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + sales desk + orders + payroll dates + MTG Airlines trips.`,
   );
 }
 

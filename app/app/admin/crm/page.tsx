@@ -11,9 +11,9 @@ export default async function CrmPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Admin CRM"
-        title="Sales pipeline"
-        lede="Targeted → Contacted → Discovery → Qualified → Forum/Consult → Eligibility review → Activated → First service → Repeat → Strategic. Hold/lost with a reason. No patient data in this CRM. ENABLE cycle: Educate, Navigate, Activate, Build, Leverage, Expand."
+        eyebrow="Company management"
+        title="Clinic eligibility"
+        lede="Admin activation desk — not the sales follow-up CRM. Targeted → Contacted → Discovery → Qualified → Forum/Consult → Eligibility review → Activated. No patient data. Sales conversations live on the Sales desk."
       />
       <div className="grid gap-3 md:grid-cols-2">
         {accounts.map((a) => (

@@ -17,6 +17,7 @@ enum Role {
   OPS
   FINANCE
   PILOT
+  SALES
 }
 
 enum PriceMarket {
@@ -132,6 +133,36 @@ enum AirTripStatus {
   HOLD
 }
 
+enum SalesKind {
+  CLINIC
+  DOCTOR
+  WAREHOUSE
+  CHARTER
+}
+
+enum SalesStage {
+  PROSPECT
+  TALKING
+  EVENT_SET
+  BOOKED
+  ACTIVE
+}
+
+enum SalesEventKind {
+  DINNER
+  SITE_VISIT
+  WAREHOUSE_TOUR
+  CONFERENCE
+  DOCTOR_CHARTER_DAY
+}
+
+enum SalesEventStatus {
+  PLANNED
+  BOOKED
+  DONE
+  CANCELED
+}
+
 model User {
   id             String   @id @default(cuid())
   email          String   @unique
@@ -154,6 +185,8 @@ model User {
   expenses         ExpenseReport[]
   requestedFlights Flight[] @relation("RequestedFlights")
   assignedFlights  Flight[] @relation("AssignedPilot")
+  salesOwned       SalesAccount[] @relation("SalesOwner")
+  salesCustomerOf  SalesAccount[] @relation("SalesCustomer")
 }
 
 model Clinic {
@@ -172,6 +205,7 @@ model Clinic {
   users        User[]
   orders       ClinicOrder[]
   crm          CrmAccount?
+  salesAccounts SalesAccount[]
 }
 
 model Product {
@@ -349,6 +383,7 @@ model Flight {
   pilotAdvisedAt   DateTime?
   createdAt        DateTime       @default(now())
   shipments        Shipment[]
+  salesEvents      SalesEvent[]
 }
 
 /// Structure only. Never claim a live Part 135 certificate. No certificate number.
@@ -427,6 +462,67 @@ model ExpenseReport {
   note       String?
   status     String   @default("SUBMITTED")
   createdAt  DateTime @default(now())
+}
+
+/// Sales desk. Not the admin clinic-approval CRM. No revenue totals.
+model SalesAccount {
+  id             String      @id @default(cuid())
+  name           String
+  kind           SalesKind
+  stage          SalesStage  @default(PROSPECT)
+  market         String
+  country        String
+  ownerId        String
+  owner          User        @relation("SalesOwner", fields: [ownerId], references: [id])
+  clinicId       String?
+  clinic         Clinic?     @relation(fields: [clinicId], references: [id])
+  customerId     String?
+  customer       User?       @relation("SalesCustomer", fields: [customerId], references: [id])
+  activityLine   String?
+  lastTouchAt    DateTime?
+  nextFollowUpAt DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  followUps      SalesFollowUp[]
+  events         SalesEvent[]
+  activities     SalesActivity[]
+}
+
+model SalesFollowUp {
+  id        String        @id @default(cuid())
+  accountId String
+  account   SalesAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  dueAt     DateTime
+  kind      String
+  note      String?
+  doneAt    DateTime?
+  createdAt DateTime      @default(now())
+}
+
+model SalesEvent {
+  id           String            @id @default(cuid())
+  accountId    String
+  account      SalesAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind         SalesEventKind
+  title        String
+  occursAt     DateTime
+  status       SalesEventStatus  @default(PLANNED)
+  handedTo     String?
+  flightId     String?
+  flight       Flight?           @relation(fields: [flightId], references: [id])
+  activityLine String?
+  createdAt    DateTime          @default(now())
+}
+
+model SalesActivity {
+  id        String       @id @default(cuid())
+  accountId String
+  account   SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String
+  body      String?
+  href      String?
+  at        DateTime     @default(now())
 }
 
 /// Payee is not an employee. No employment type, W-2, or 1099.

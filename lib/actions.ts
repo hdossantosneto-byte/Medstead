@@ -39,6 +39,7 @@ function revalidateApp() {
   revalidatePath("/app/flights/135");
   revalidatePath("/app/travel");
   revalidatePath("/app/clinic/charter");
+  revalidatePath("/app/sales");
   revalidatePath("/app/finance/payroll");
   revalidatePath("/app/finance/quotes");
   revalidatePath("/app/finance/expenses");
@@ -722,10 +723,14 @@ export async function requestAirTrip(form: {
 
   const tripType = form.tripType;
   if (tripType === "DOCTOR_CHARTER") {
-    if (!CLINIC_ROLES.includes(user.role)) return { error: "Only a clinic seat can request a doctor charter." };
-    if (!clinicApproved(user) || !user.clinic) return { error: "Clinic must be approved first." };
+    if (!CLINIC_ROLES.includes(user.role) && user.role !== "SALES") {
+      return { error: "Only a clinic seat or sales can request a doctor charter." };
+    }
+    if (CLINIC_ROLES.includes(user.role) && (!clinicApproved(user) || !user.clinic)) {
+      return { error: "Clinic must be approved first." };
+    }
   } else if (tripType === "COMPANY_TRAVEL") {
-    if (user.role !== "MEDSTEAD_ADMIN" && user.role !== "OPS") {
+    if (user.role !== "MEDSTEAD_ADMIN" && user.role !== "OPS" && user.role !== "SALES") {
       return { error: "Company travel is for MedStead people. Del dispatches." };
     }
   } else if (tripType === "PERSONAL_GOODS") {
@@ -864,6 +869,246 @@ export async function acknowledgePilotBrief(flightId: string) {
   return { ok: true };
 }
 
+async function writeSalesActivity(
+  accountId: string,
+  kind: string,
+  title: string,
+  body: string,
+  href?: string,
+) {
+  await prisma.salesActivity.create({ data: { accountId, kind, title, body, href } });
+  await prisma.salesAccount.update({
+    where: { id: accountId },
+    data: { lastTouchAt: new Date(), activityLine: body },
+  });
+}
+
+export async function logSalesFollowUp(accountId: string, note?: string) {
+  const actor = await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
+  const account = await prisma.salesAccount.findUnique({ where: { id: accountId } });
+  if (!account) return { error: "Account not found." };
+  const next = new Date(Date.now() + 7 * 86400000);
+  await prisma.salesFollowUp.updateMany({
+    where: { accountId, doneAt: null },
+    data: { doneAt: new Date(), note: note?.trim() || "Logged in-app. No WhatsApp." },
+  });
+  await prisma.salesFollowUp.create({
+    data: { accountId, dueAt: next, kind: "follow_up", note: "Next conversation." },
+  });
+  await prisma.salesAccount.update({
+    where: { id: accountId },
+    data: {
+      nextFollowUpAt: next,
+      stage: account.stage === "PROSPECT" ? "TALKING" : account.stage,
+    },
+  });
+  await writeSalesActivity(
+    accountId,
+    "followup",
+    "Follow-up logged",
+    note?.trim() || `Sales ${actor.name} logged a follow-up. Next date set. No WhatsApp.`,
+    `/app/sales/${accountId}`,
+  );
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function bookSalesEvent(input: {
+  accountId: string;
+  kind: "DINNER" | "SITE_VISIT" | "WAREHOUSE_TOUR" | "CONFERENCE" | "DOCTOR_CHARTER_DAY";
+  date: string;
+  title?: string;
+}) {
+  const actor = await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
+  const account = await prisma.salesAccount.findUnique({
+    where: { id: input.accountId },
+    include: { clinic: { include: { users: true } } },
+  });
+  if (!account) return { error: "Account not found." };
+  if (!input.date) return { error: "Pick a date." };
+  const occursAt = new Date(`${input.date}T16:00:00.000Z`);
+  const title =
+    input.title?.trim() ||
+    `${input.kind.replaceAll("_", " ")} · ${account.name}`;
+
+  let flightId: string | undefined;
+  let handedTo: string | undefined;
+  if (input.kind === "DOCTOR_CHARTER_DAY") {
+    const dest = account.country.toLowerCase().includes("bahamas") ? "NAS" : "NAS";
+    const requestedById =
+      account.clinic?.users.find((u) => u.role === "DOCTOR")?.id ??
+      account.customerId ??
+      actor.id;
+    const flight = await prisma.flight.create({
+      data: {
+        flightCode: await nextFlightCode("FLL_NAS", "DOCTOR_CHARTER"),
+        corridor: "FLL_NAS",
+        tripType: "DOCTOR_CHARTER",
+        tripStatus: "REQUESTED",
+        live: true,
+        phase: "T48_PREP",
+        origin: "FLL",
+        destination: dest,
+        requestedById,
+        passengerNote: `${account.name} — doctor charter day`,
+        purpose: "Sales booked a doctor charter day. Del schedules. Not a clinic supply order.",
+        assignedPilotId: (await defaultPilotId()) ?? undefined,
+        aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+        activityLine: "Sales handed a charter day to Del. No WhatsApp.",
+      },
+    });
+    flightId = flight.id;
+    handedTo = "DEL";
+  } else if (input.kind === "WAREHOUSE_TOUR") {
+    handedTo = "OPS";
+  }
+
+  const event = await prisma.salesEvent.create({
+    data: {
+      accountId: account.id,
+      kind: input.kind,
+      title,
+      occursAt,
+      status: "BOOKED",
+      handedTo,
+      flightId,
+      activityLine:
+        handedTo === "DEL"
+          ? "Booked · handed to Del for charter dispatch."
+          : handedTo === "OPS"
+            ? "Booked · handed to warehouse ops for the tour."
+            : "Event booked in-app.",
+    },
+  });
+
+  await prisma.salesAccount.update({
+    where: { id: account.id },
+    data: {
+      stage: account.stage === "PROSPECT" || account.stage === "TALKING" ? "EVENT_SET" : account.stage,
+      nextFollowUpAt: occursAt,
+    },
+  });
+  await prisma.salesFollowUp.updateMany({
+    where: { accountId: account.id, doneAt: null, kind: "book_event" },
+    data: { doneAt: new Date() },
+  });
+  await writeSalesActivity(
+    account.id,
+    "event",
+    title,
+    event.activityLine || "Event booked.",
+    `/app/sales/${account.id}`,
+  );
+  void actor;
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function convertSalesToOrder(accountId: string) {
+  const actor = await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
+  const account = await prisma.salesAccount.findUnique({
+    where: { id: accountId },
+    include: { clinic: true },
+  });
+  if (!account) return { error: "Account not found." };
+  if (!account.clinicId || !account.clinic) {
+    return { error: "Link a clinic first. Clinic approval stays on the admin desk." };
+  }
+  await prisma.salesAccount.update({
+    where: { id: accountId },
+    data: { stage: "BOOKED", activityLine: "Sales marked ready to order. Clinic shops in-app." },
+  });
+  await prisma.clinic.update({
+    where: { id: account.clinicId },
+    data: { activityLine: "Sales converted this account · shop the book. No call needed." },
+  });
+  await writeSalesActivity(
+    accountId,
+    "order",
+    "Ready to order",
+    `${actor.name} converted ${account.name} to a clinic order next step. No revenue on this card.`,
+    "/app/clinic/catalog",
+  );
+  const next = new Date(Date.now() + 7 * 86400000);
+  await prisma.salesFollowUp.create({
+    data: { accountId, dueAt: next, kind: "follow_up", note: "Check that an order landed." },
+  });
+  await prisma.salesAccount.update({
+    where: { id: accountId },
+    data: { nextFollowUpAt: next },
+  });
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function salesRequestCharter(accountId: string) {
+  const actor = await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
+  const account = await prisma.salesAccount.findUnique({
+    where: { id: accountId },
+    include: { clinic: { include: { users: true } } },
+  });
+  if (!account) return { error: "Account not found." };
+  const requestedById =
+    account.clinic?.users.find((u) => u.role === "DOCTOR" || u.role === "CLINIC_ADMIN")?.id ??
+    account.customerId ??
+    actor.id;
+  const dest = account.country.toLowerCase().includes("freeport") ? "FPO" : "NAS";
+  const corridor = dest === "FPO" ? "FLL_FPO" : "FLL_NAS";
+  const flight = await prisma.flight.create({
+    data: {
+      flightCode: await nextFlightCode(corridor, "DOCTOR_CHARTER"),
+      corridor,
+      tripType: "DOCTOR_CHARTER",
+      tripStatus: "REQUESTED",
+      live: true,
+      phase: "T48_PREP",
+      origin: "FLL",
+      destination: dest,
+      requestedById,
+      passengerNote: `${account.name} — sales charter request`,
+      purpose: "Sales requested a charter. Del owns dispatch. Not a clinic supply order.",
+      assignedPilotId: (await defaultPilotId()) ?? undefined,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine: "Sales requested a charter · waiting on Del to schedule. No WhatsApp.",
+    },
+  });
+  await prisma.salesAccount.update({
+    where: { id: accountId },
+    data: { stage: account.stage === "ACTIVE" ? "ACTIVE" : "BOOKED" },
+  });
+  await writeSalesActivity(
+    accountId,
+    "flight",
+    flight.flightCode,
+    "Charter requested · handed to Del. Finance cannot fly.",
+    "/app/flights",
+  );
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function completeWarehouseVisit(eventId: string) {
+  const actor = await requireRole(["OPS", "MEDSTEAD_ADMIN"]);
+  const event = await prisma.salesEvent.findUnique({
+    where: { id: eventId },
+    include: { account: true },
+  });
+  if (!event) return { error: "Visit not found." };
+  await prisma.salesEvent.update({
+    where: { id: eventId },
+    data: { status: "DONE", activityLine: `${actor.name} completed the warehouse visit in-app.` },
+  });
+  await writeSalesActivity(
+    event.accountId,
+    "event",
+    event.title,
+    "Warehouse tour done. Sales sees it on the account timeline.",
+    `/app/sales/${event.accountId}`,
+  );
+  revalidateApp();
+  return { ok: true };
+}
+
 export async function markScheduledPaySent(id: string) {
   await requireRole(["FINANCE", "MEDSTEAD_ADMIN"]);
   const row = await prisma.scheduledPay.findUnique({ where: { id } });
@@ -924,6 +1169,9 @@ export async function runNextAction(input: {
   date?: string;
   flightId?: string;
   quoteId?: string;
+  accountId?: string;
+  eventId?: string;
+  eventKind?: "DINNER" | "SITE_VISIT" | "WAREHOUSE_TOUR" | "CONFERENCE" | "DOCTOR_CHARTER_DAY";
 }) {
   if (input.kind === "open") return { ok: true };
 
@@ -1157,6 +1405,25 @@ export async function runNextAction(input: {
   }
   if (input.kind === "acknowledge_brief" && input.flightId) {
     return acknowledgePilotBrief(input.flightId);
+  }
+  if (input.kind === "log_followup" && input.accountId) {
+    return logSalesFollowUp(input.accountId);
+  }
+  if (input.kind === "book_event" && input.accountId && input.eventKind && input.date) {
+    return bookSalesEvent({
+      accountId: input.accountId,
+      kind: input.eventKind,
+      date: input.date,
+    });
+  }
+  if (input.kind === "convert_order" && input.accountId) {
+    return convertSalesToOrder(input.accountId);
+  }
+  if (input.kind === "request_charter" && input.accountId) {
+    return salesRequestCharter(input.accountId);
+  }
+  if (input.kind === "host_warehouse_visit" && input.eventId) {
+    return completeWarehouseVisit(input.eventId);
   }
 
   return { error: "Unknown next action." };

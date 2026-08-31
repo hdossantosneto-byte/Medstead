@@ -5,6 +5,7 @@ import { Wordmark } from "./brand";
 import { CartBadge } from "./cart-badge";
 import { OpsBottomNav } from "./ops-bottom-nav";
 import { PilotBottomNav } from "./pilot-bottom-nav";
+import { SalesBottomNav } from "./sales-bottom-nav";
 import { SignOutButton } from "./sign-out-button";
 
 type NavItem = { href: string; label: string };
@@ -24,6 +25,12 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
   if (role === "PILOT") {
     base.push({ href: "/app/flights", label: "MTG Airlines" });
   }
+  if (role === "SALES") {
+    base.push(
+      { href: "/app/sales", label: "Accounts" },
+      { href: "/app/sales/events", label: "Events" },
+    );
+  }
   if (CLINIC_ROLES.includes(role)) {
     if (clinicOk) {
       base.push(
@@ -38,7 +45,8 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
   }
   if (role === "MEDSTEAD_ADMIN") {
     base.push(
-      { href: "/app/admin/crm", label: "CRM" },
+      { href: "/app/sales", label: "Sales desk" },
+      { href: "/app/admin/crm", label: "Eligibility CRM" },
       { href: "/app/admin/clinics", label: "Clinics" },
       { href: "/app/admin/approvals", label: "Approvals" },
       { href: "/app/admin/orders", label: "Orders" },
@@ -77,6 +85,7 @@ export function AppShell({
 }) {
   const ops = role === "OPS";
   const pilot = role === "PILOT";
+  const sales = role === "SALES";
   const items = ops ? [] : navFor(role, clinicOk);
   return (
     <div className="min-h-screen bg-sand">
@@ -103,9 +112,10 @@ export function AppShell({
           </nav>
         )}
       </header>
-      <main className={`mx-auto max-w-6xl px-4 py-6 ${ops || pilot ? "pb-28" : "pb-10"}`}>{children}</main>
+      <main className={`mx-auto max-w-6xl px-4 py-6 ${ops || pilot || sales ? "pb-28" : "pb-10"}`}>{children}</main>
       {ops && <OpsBottomNav />}
       {pilot && <PilotBottomNav />}
+      {sales && <SalesBottomNav />}
     </div>
   );
 }

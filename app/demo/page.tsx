@@ -36,7 +36,12 @@ const ACCOUNTS = [
   {
     email: "admin@medstead.demo",
     role: "MedStead admin",
-    note: "CRM, approvals, invoices, status override",
+    note: "Clinic eligibility, approvals, invoices. Sales desk is a separate seat.",
+  },
+  {
+    email: "sales@medstead.demo",
+    role: "Sales",
+    note: "Accounts, follow-ups, events. Not the admin eligibility CRM.",
   },
   {
     email: "ops@medstead.demo",

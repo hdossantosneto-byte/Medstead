@@ -23,7 +23,9 @@ export default async function AppHome() {
           ? "Finance · accounting"
           : user.role === "PILOT"
             ? "Pilot · MTG Airlines"
-            : ROLE_LABEL[user.role];
+            : user.role === "SALES"
+              ? "Sales · follow-up desk"
+              : ROLE_LABEL[user.role];
 
   return (
     <div>
