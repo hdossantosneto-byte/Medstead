@@ -862,6 +862,15 @@ export async function loadQueue(user: {
         });
       }
     }
+    const salesFirst = ["log_followup", "book_event", "convert_order", "request_charter"];
+    items.sort((a, b) => {
+      const ap = salesFirst.indexOf(a.kind);
+      const bp = salesFirst.indexOf(b.kind);
+      if (ap === -1 && bp === -1) return 0;
+      if (ap === -1) return 1;
+      if (bp === -1) return -1;
+      return ap - bp;
+    });
   }
 
   if (user.role === "PILOT") {
