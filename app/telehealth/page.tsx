@@ -22,8 +22,8 @@ export default function TelehealthPage() {
             Telehealth is not live.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-white/75">
-            We do not schedule visits, hold an appointment calendar, or send you to book a
-            specialist from this website. When telehealth opens, it will be announced here.
+            We do not schedule visits or hold an appointment calendar on this website. When
+            telehealth opens, it will be announced here.
           </p>
         </div>
       </section>

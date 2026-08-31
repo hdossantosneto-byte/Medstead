@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { APP_GET_STARTED } from "@/lib/constants";
-import { MARKETING_NAV } from "./marketing";
+import { PublicNavLinks } from "./public-nav-links";
 
 export function PublicMobileNav() {
   const [open, setOpen] = useState(false);
@@ -28,17 +27,8 @@ export function PublicMobileNav() {
       </button>
       {open ? (
         <div className="absolute inset-x-0 top-[72px] border-b border-navy-900/8 bg-white px-4 py-4 shadow-tile">
-          <nav className="mx-auto flex max-w-6xl flex-col gap-1">
-            {MARKETING_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-3 text-sm font-semibold text-navy-900 hover:bg-sand"
-                onClick={() => setOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
+          <nav className="mx-auto flex max-w-6xl flex-col gap-1 [&>a]:rounded-lg [&>a]:px-3 [&>a]:py-3 [&>a]:text-sm [&>a]:font-semibold">
+            <PublicNavLinks onNavigate={() => setOpen(false)} />
             <a
               href={APP_GET_STARTED}
               className="mt-2 inline-flex min-h-tap items-center justify-center rounded-lg bg-brand-green px-5 py-2.5 text-sm font-semibold text-white"

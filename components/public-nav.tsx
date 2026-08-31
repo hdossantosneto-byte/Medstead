@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { auth } from "@/lib/session";
 import { Wordmark } from "./brand";
-import { GetStartedCta, MARKETING_NAV } from "./marketing";
+import { GetStartedCta } from "./marketing";
 import { PublicMobileNav } from "./public-mobile-nav";
+import { PublicNavLinks } from "./public-nav-links";
 
 export async function PublicNav() {
   const session = await auth();
@@ -10,12 +11,8 @@ export async function PublicNav() {
     <header className="relative sticky top-0 z-40 border-b border-navy-900/8 bg-white">
       <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Wordmark compact />
-        <nav className="hidden items-center gap-8 text-sm font-medium text-navy-800 lg:flex">
-          {MARKETING_NAV.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-forest-700">
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden items-center gap-8 lg:flex">
+          <PublicNavLinks />
         </nav>
         <div className="flex items-center gap-2">
           {session?.user ? (

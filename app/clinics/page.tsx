@@ -54,9 +54,8 @@ export default function ClinicsPage() {
               Coming soon. Not bookable today.
             </h2>
             <p className="mt-3 text-sm leading-6 text-navy-800/70">
-              Telehealth is not live. We do not schedule visits, hold an appointment calendar, or
-              ask you to see a specialist from this website. Check the status page if you need a
-              clear yes or no.
+              Telehealth is not live. We do not schedule visits or hold an appointment calendar on
+              this website. Check the status page if you need a clear yes or no.
             </p>
             <div className="mt-6">
               <CtaButton href="/telehealth" variant="outline">
