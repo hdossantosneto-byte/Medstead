@@ -8,7 +8,7 @@ import { requireRole } from "@/lib/session";
 export default async function SalesEventsPage() {
   await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
   const events = await prisma.salesEvent.findMany({
-    include: { account: true, flight: true },
+    include: { account: true, flight: true, owner: true },
     orderBy: { occursAt: "desc" },
   });
 
@@ -29,6 +29,7 @@ export default async function SalesEventsPage() {
               </div>
               <p className="mt-1 text-sm text-navy-800/60">
                 {SALES_EVENT_LABEL[ev.kind]} · {whenDate(ev.occursAt)} · {ev.account.name}
+                {ev.owner ? ` · ${ev.owner.name}` : ""}
               </p>
               {ev.handedTo && (
                 <p className="mt-2 text-sm text-navy-800/70">

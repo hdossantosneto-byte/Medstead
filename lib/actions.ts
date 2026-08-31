@@ -965,6 +965,46 @@ async function writeSalesActivity(
   });
 }
 
+export async function createSalesAccount(form: {
+  name: string;
+  kind: "CLINIC" | "DOCTOR" | "WAREHOUSE" | "CHARTER";
+  country: string;
+  market: string;
+  clinicId?: string;
+  customerId?: string;
+}) {
+  const actor = await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
+  const name = form.name.trim();
+  if (!name) return { error: "Account name is required." };
+  const next = new Date(Date.now() + 3 * 86400000);
+  const account = await prisma.salesAccount.create({
+    data: {
+      name,
+      kind: form.kind,
+      stage: "PROSPECT",
+      country: form.country.trim() || "United States",
+      market: form.market.trim() || "USA",
+      ownerId: actor.id,
+      clinicId: form.clinicId || null,
+      customerId: form.customerId || null,
+      nextFollowUpAt: next,
+      activityLine: "Opened on the sales desk. First conversation is next.",
+    },
+  });
+  await prisma.salesFollowUp.create({
+    data: { accountId: account.id, dueAt: next, kind: "follow_up", note: "First conversation." },
+  });
+  await writeSalesActivity(
+    account.id,
+    "note",
+    "Account opened",
+    `${actor.name} opened this account. No revenue on this desk.`,
+    `/app/sales/${account.id}`,
+  );
+  revalidateApp();
+  return { ok: true, id: account.id };
+}
+
 export async function logSalesFollowUp(accountId: string, note?: string) {
   const actor = await requireRole(["SALES", "MEDSTEAD_ADMIN"]);
   const account = await prisma.salesAccount.findUnique({ where: { id: accountId } });
@@ -1048,6 +1088,7 @@ export async function bookSalesEvent(input: {
   const event = await prisma.salesEvent.create({
     data: {
       accountId: account.id,
+      ownerId: actor.id,
       kind: input.kind,
       title,
       occursAt,

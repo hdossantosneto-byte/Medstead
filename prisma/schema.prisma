@@ -200,6 +200,7 @@ model User {
   assignedFlights  Flight[] @relation("AssignedPilot")
   salesOwned       SalesAccount[] @relation("SalesOwner")
   salesCustomerOf  SalesAccount[] @relation("SalesCustomer")
+  salesEvents      SalesEvent[]   @relation("SalesEventOwner")
 }
 
 model Clinic {
@@ -535,6 +536,8 @@ model SalesEvent {
   id           String            @id @default(cuid())
   accountId    String
   account      SalesAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  ownerId      String?
+  owner        User?             @relation("SalesEventOwner", fields: [ownerId], references: [id])
   kind         SalesEventKind
   title        String
   occursAt     DateTime

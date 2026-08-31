@@ -1018,6 +1018,7 @@ async function main() {
     await prisma.salesEvent.create({
       data: {
         accountId: bethelSales.id,
+        ownerId: salesId,
         kind: "DOCTOR_CHARTER_DAY",
         title: "Bethel charter day",
         occursAt: new Date("2026-09-12T16:00:00.000Z"),
@@ -1076,6 +1077,7 @@ async function main() {
   await prisma.salesEvent.create({
     data: {
       accountId: warehouseSales.id,
+      ownerId: salesId,
       kind: "WAREHOUSE_TOUR",
       title: "C15 walk-through",
       occursAt: new Date("2026-09-08T16:00:00.000Z"),
@@ -1104,6 +1106,52 @@ async function main() {
       dueAt: new Date(Date.now() - 2 * 86400000),
       kind: "follow_up",
       note: "Pharmacy seat still pending admin. Stay on them in-app.",
+    },
+  });
+
+  const rolleSales = await prisma.salesAccount.create({
+    data: {
+      name: "Rolle Family Practice",
+      kind: "DOCTOR",
+      stage: "PROSPECT",
+      market: "INTL",
+      country: "Bahamas",
+      ownerId: salesId,
+      clinicId: rolle.id,
+      nextFollowUpAt: new Date(Date.now() + 4 * 86400000),
+      activityLine: "Prospect · first conversation after Clint’s forum follow-up.",
+    },
+  });
+  await prisma.salesFollowUp.create({
+    data: {
+      accountId: rolleSales.id,
+      dueAt: new Date(Date.now() + 4 * 86400000),
+      kind: "follow_up",
+      note: "Open the first conversation. Admin eligibility is a different desk.",
+    },
+  });
+
+  const gulf = await prisma.salesAccount.create({
+    data: {
+      name: "Gulf Coast physician group",
+      kind: "CLINIC",
+      stage: "EVENT_SET",
+      market: "USA",
+      country: "United States",
+      ownerId: salesId,
+      nextFollowUpAt: new Date("2026-09-18T16:00:00.000Z"),
+      activityLine: "Conference set. MSY corridor is not live — do not promise a flight.",
+    },
+  });
+  await prisma.salesEvent.create({
+    data: {
+      accountId: gulf.id,
+      ownerId: salesId,
+      kind: "CONFERENCE",
+      title: "Gulf Coast provider dinner",
+      occursAt: new Date("2026-09-18T16:00:00.000Z"),
+      status: "BOOKED",
+      activityLine: "Event set · sales owns the room. No flight promise.",
     },
   });
 

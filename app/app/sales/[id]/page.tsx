@@ -21,7 +21,7 @@ export default async function SalesAccountPage({ params }: { params: { id: strin
       owner: true,
       clinic: { include: { users: true, orders: { orderBy: { createdAt: "desc" }, take: 8 } } },
       customer: true,
-      events: { orderBy: { occursAt: "desc" } },
+      events: { include: { owner: true, flight: true }, orderBy: { occursAt: "desc" } },
       activities: { orderBy: { at: "desc" }, take: 20 },
       followUps: { orderBy: { dueAt: "desc" }, take: 6 },
     },
@@ -43,8 +43,16 @@ export default async function SalesAccountPage({ params }: { params: { id: strin
 
   type Feed = { at: Date; title: string; body: string; tag: string };
   const feed: Feed[] = [];
-  for (const a of account.activities) {
+  for (const a of account.activities.filter((row) => row.kind === "followup" || row.kind === "note" || row.kind === "order")) {
     feed.push({ at: a.at, title: a.title, body: a.body || "", tag: a.kind });
+  }
+  for (const fu of account.followUps) {
+    feed.push({
+      at: fu.doneAt ?? fu.dueAt,
+      title: fu.doneAt ? "Follow-up logged" : "Follow-up due",
+      body: fu.note || "Next conversation in-app.",
+      tag: "followup",
+    });
   }
   for (const o of account.clinic?.orders ?? []) {
     feed.push({
@@ -55,18 +63,19 @@ export default async function SalesAccountPage({ params }: { params: { id: strin
     });
   }
   for (const f of flights) {
+    const dispatched = f.tripStatus === "DISPATCHED";
     feed.push({
       at: f.dispatchedAt ?? f.createdAt,
-      title: f.flightCode,
+      title: dispatched ? `${f.flightCode} dispatched` : f.flightCode,
       body: `${TRIP_TYPE_LABEL[f.tripType]} · ${AIR_TRIP_STATUS_LABEL[f.tripStatus]} · ${f.origin}→${f.destination}${f.activityLine ? ` · ${f.activityLine}` : ""}`,
-      tag: "flight",
+      tag: dispatched ? "dispatched" : "flight",
     });
   }
   for (const ev of account.events) {
     feed.push({
       at: ev.occursAt,
       title: ev.title,
-      body: `${SALES_EVENT_LABEL[ev.kind]} · ${ev.status}${ev.activityLine ? ` · ${ev.activityLine}` : ""}`,
+      body: `${SALES_EVENT_LABEL[ev.kind]} · ${ev.status}${ev.owner ? ` · ${ev.owner.name}` : ""}${ev.flight ? ` · ${ev.flight.flightCode}` : ""}${ev.activityLine ? ` · ${ev.activityLine}` : ""}`,
       tag: "event",
     });
   }
