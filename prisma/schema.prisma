@@ -98,6 +98,23 @@ enum PriceLabel {
   DEMO
 }
 
+enum FlightCorridor {
+  FLL_NAS
+  FLL_FPO
+  FLL_MSY
+}
+
+enum FlightPhase {
+  T48_PREP
+  T24_FREEZE
+  T6_GO_NO_GO
+  TENDER
+  DEPARTED
+  ARRIVED
+  CUSTOMS
+  POD
+}
+
 model User {
   id             String   @id @default(cuid())
   email          String   @unique
@@ -274,10 +291,27 @@ model Shipment {
   publicClock   Boolean        @default(false)
   activityLine  String?
   promisedDate  DateTime?
+  flightId      String?
+  flight        Flight?        @relation(fields: [flightId], references: [id])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   gates         ReleaseGate[]
   events        StatusEvent[]
+}
+
+model Flight {
+  id            String         @id @default(cuid())
+  flightCode    String         @unique
+  corridor      FlightCorridor
+  live          Boolean        @default(true)
+  phase         FlightPhase    @default(T48_PREP)
+  goNoGo        String?
+  origin        String
+  destination   String
+  dispatchedAt  DateTime?
+  activityLine  String?
+  createdAt     DateTime       @default(now())
+  shipments     Shipment[]
 }
 
 model ReleaseGate {

@@ -39,8 +39,13 @@ const ACCOUNTS = [
   },
   {
     email: "ops@medstead.demo",
-    role: "Ops",
-    note: "Six-gate release. No finance totals.",
+    role: "Ops (Chris)",
+    note: "Warehouse pick / pack. No finance totals.",
+  },
+  {
+    email: "del@medstead.demo",
+    role: "Del · ops",
+    note: "Delivery dates and Dispatch flight. Doctors do not block cargo.",
   },
   {
     email: "finance@medstead.demo",

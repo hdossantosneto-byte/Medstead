@@ -75,7 +75,7 @@ export default function LoginPage() {
           </Suspense>
         </div>
         <p className="mt-6 text-center text-sm">
-          <a href="/demo" className="font-semibold text-teal-700 hover:underline">
+          <a href="/demo" className="font-semibold text-forest-700 hover:underline">
             One-click demo roles
           </a>
         </p>

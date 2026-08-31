@@ -165,6 +165,29 @@ export const SERVICE_LABEL: Record<FreightService, string> = {
   STANDARD_SEA: "Standard Sea",
 };
 
+export const CORRIDOR_LABEL: Record<string, string> = {
+  FLL_NAS: "FLL → Nassau",
+  FLL_FPO: "FLL → Freeport",
+  FLL_MSY: "FLL → New Orleans",
+};
+
+export const CORRIDOR_LIVE: Record<string, boolean> = {
+  FLL_NAS: true,
+  FLL_FPO: true,
+  FLL_MSY: false,
+};
+
+export const FLIGHT_PHASE_LABEL: Record<string, string> = {
+  T48_PREP: "T-48 prep",
+  T24_FREEZE: "T-24 freeze manifest",
+  T6_GO_NO_GO: "T-6 go / no-go",
+  TENDER: "Tender",
+  DEPARTED: "Departed",
+  ARRIVED: "Arrived",
+  CUSTOMS: "Customs",
+  POD: "Proof of delivery",
+};
+
 export const SERVICE_WINDOW: Record<FreightService, string> = {
   EXPRESS_AIR: "3–5 days after release",
   STANDARD_SEA: "5–7 days after release",

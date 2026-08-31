@@ -73,9 +73,14 @@ export default async function ClinicOrderDetail({ params }: { params: { id: stri
           )}
           {order.shipment && (
             <p className="mt-2 text-sm">
-              Logistics {order.shipment.shipmentCode}: {SHIPMENT_LABEL[order.shipment.status]}
+              Package {order.shipment.shipmentCode}: {SHIPMENT_LABEL[order.shipment.status]}
               {order.shipment.publicClock ? " · public clock on" : " · public clock off"}
             </p>
+          )}
+          {order.shipment && (
+            <Button href={`/track/${order.shipment.shipmentCode}`} variant="ghost">
+              Track package
+            </Button>
           )}
           {order.promisedDate && (
             <p className="mt-2 text-sm">Delivery date (set by Del): {when(order.promisedDate)}</p>

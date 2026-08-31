@@ -45,32 +45,55 @@ Visit `/demo` and click a role. Password for **every** seeded user is `demo1234`
 | Doctor | doctor@medstead.demo | Approved **international** clinic (Bethel Medical) |
 | Pharmacy | pharmacy@medstead.demo | Inactive until admin approves 360 Wellness |
 | MedStead admin | admin@medstead.demo | CRM, approvals, invoices, status override |
-| Ops | ops@medstead.demo | Six-gate release; no finance totals |
+| Ops (Chris) | ops@medstead.demo | Warehouse pick / pack; no finance totals |
+| Del | del@medstead.demo | Delivery dates + Dispatch flight |
 | Finance | finance@medstead.demo | Invoices/payments; cannot ship |
+
+## Brand
+
+Header, login, footer, and ops use the MedStead Transport mark (`public/medstead-logo.svg`): globe, ship, truck with a green medical cross, plane, MEDSTEAD wordmark, TRANSPORT, FASTER ACCESS. BETTER CARE. Navy `#002147` / `#0B2545` and forest green `#2E7D32`. Favicon comes from that mark.
 
 ## Do this next
 
 Each signed-in home (`/app`) is a **Do this next** queue: work waiting on that role, one card, one button. Completing a step writes an activity line on the record and creates the next role’s item. Empty state: “You're clear. Nothing is waiting on you.”
 
-Clinic 11-status and logistics 11-status stay in sync. Submitting a clinic order creates a linked shipment (public clock off). Next-action buttons move **both** machines: review → approve → invoice → pay → prepare → gates → origin hold → manifest → Del date → shipped → in transit → delivered. Do not WhatsApp — use the queue. Contact email is for exceptions only.
+Clinic 11-status and logistics 11-status stay in sync. Submitting a clinic order creates a linked shipment (public clock off). Next-action buttons move **both** machines: review → approve → invoice → pay → prepare → gates → origin hold → manifest → Del date → shipped / **Dispatch flight** → in transit → delivered. Do not WhatsApp — use the queue. Contact email is for exceptions only.
+
+## Orders & Packages
+
+Public `/orders` (also `/orders-and-packages`) combines Track a package and + New order. Header and footer SERVICES both link **Orders & Packages**.
+
+Ops on a phone (`/app/ops`): sticky bottom nav Home | Next | Orders | Packages | More. Huge **Orders** and **Packages** tiles, six-gate count, warehouse FLL-C15. Packages = one tap per shipment. Finance numbers stay hidden.
+
+## Flight dispatch (Del)
+
+`/app/flights` is live. Corridors: FLL–NAS and FLL–FPO (live), FLL–MSY (not live yet). Flight-day: T-48 → T-24 freeze → T-6 go/no-go → dispatch. **Doctors do not block dispatch.** Finance cannot fly.
+
+Demo path:
+
+1. `doctor@medstead.demo` — shop / see orders (CO-1008 is already released).
+2. `finance@medstead.demo` — mark paid when an invoice is waiting.
+3. `del@medstead.demo` — tap **Dispatch flight** on the Nassau package.
+4. Doctor refresh shows In Transit. No call to Del.
 
 Seeded examples:
 
-- **Admin (Clint):** 48h follow-up (Rolle), activate 360 Wellness, approve submitted order CO-1001.
+- **Admin (Clint):** 48h follow-up (Rolle), activate 360 Wellness, start review of CO-1001.
 - **Finance:** generate invoice for approved CO-1005; mark paid on CO-1002.
-- **Ops (Del):** prepare shipment for paid CO-1006; clear packaging/quality on hold freight; date promises are Del-only.
+- **Del (ops):** Dispatch flight on doctor-originated CO-1008 (FLL–NAS). Date promises are Del-only.
+- **Chris (ops):** prepare shipment for paid CO-1006; clear packaging/quality on hold freight.
 - **Pharmacy:** pending approval until Clint activates 360 Wellness.
-- **Doctor:** pay invoice CO-1002 so ops can start without a call.
+- **Doctor:** pay invoice CO-1002; after Del dispatches, track In Transit without calling.
 
 Finance cannot ship. Ops cannot see invoice totals. Sales/admin cannot set delivery dates.
 
 ## What to try
 
-1. Public: `/freight` quote (Express Air 3–5 days, Standard Sea 5–7 days) and `/track/MS-20260820-FLL-NAS-0001`.
-2. `/demo` as admin, finance, ops, and pharmacy — each home is a next-action queue from live records.
-3. Approved clinic: `/app/clinic/catalog` — USA vs international books, place an order through the 11 clinic statuses.
+1. Public: `/orders` (Orders & Packages), `/freight` quote, `/track/MS-20260820-FLL-NAS-0001`.
+2. `/demo` as Del, doctor, finance, admin — each home is a next-action queue.
+3. Approved clinic: `/app/clinic/catalog` — search, categories, cart, place an order.
 4. Customer: rewards (100 welcome + 1 pt / $1) and WareSpace C15, 700 NW 57th Ct, Fort Lauderdale, FL 33309.
-5. Flight ops: `/app/flights` is labeled coming later.
+5. Del: `/app/ops` on a phone-width window, then **Dispatch flight**.
 
 Printable docs (signed-in): Commercial Invoice, Packing List, Air Waybill, Customs Declaration, Import/Export Manifest under `/docs/{kind}/{orderId}`.
 

@@ -29,6 +29,9 @@ export type QueueKind =
   | "mark_in_transit"
   | "mark_delivered"
   | "clinic_pay"
+  | "freeze_manifest"
+  | "go_no_go"
+  | "dispatch_flight"
   | "open";
 
 export type QueueItem = {
@@ -45,6 +48,7 @@ export type QueueItem = {
   shipmentId?: string;
   crmId?: string;
   gate?: GateName;
+  flightId?: string;
   needsDate?: boolean;
 };
 
@@ -231,7 +235,7 @@ export async function loadQueue(user: {
   }
 
   if (user.role === "OPS") {
-    const [needPrep, preparing, manifested, moving, holds] = await Promise.all([
+    const [needPrep, preparing, manifested, moving, holds, flights] = await Promise.all([
       prisma.clinicOrder.findMany({
         where: { status: "PAYMENT_RECEIVED" },
         include: { clinic: true, shipment: { include: { gates: true } } },
@@ -252,6 +256,10 @@ export async function loadQueue(user: {
         where: { status: "ORIGIN_RECEIVED_HOLD" },
         include: { gates: true, clinicOrder: { include: { clinic: true } } },
       }),
+      prisma.flight.findMany({
+        where: { live: true, phase: { in: ["T48_PREP", "T24_FREEZE", "T6_GO_NO_GO"] } },
+        include: { shipments: { include: { clinicOrder: { include: { clinic: true } } } } },
+      }),
     ]);
 
     for (const o of needPrep) {
@@ -262,7 +270,7 @@ export async function loadQueue(user: {
         why: "Finance marked paid · waiting on ops to start gates. Del owns delivery dates.",
         actionLabel: "Prepare shipment",
         kind: "prepare_shipment",
-        href: "/app/ops/shipping",
+        href: "/app/ops/packages",
         orderId: o.id,
       });
     }
@@ -277,7 +285,7 @@ export async function loadQueue(user: {
           why: "Preparing shipment · create the six-gate checklist.",
           actionLabel: "Prepare shipment",
           kind: "prepare_shipment",
-          href: "/app/ops/shipping",
+          href: "/app/ops/packages",
           orderId: o.id,
         });
         continue;
@@ -291,7 +299,7 @@ export async function loadQueue(user: {
             why: "Gates are green · move logistics to Origin Received-Hold, then manifest.",
             actionLabel: "Mark origin received",
             kind: "mark_origin_received",
-            href: "/app/ops/shipping",
+            href: "/app/ops/packages",
             shipmentId: shipment.id,
           });
           continue;
@@ -333,9 +341,24 @@ export async function loadQueue(user: {
           why: "Del only. Sales and admin CRM cannot promise dates.",
           actionLabel: "Confirm date",
           kind: "set_delivery_date",
-          href: "/app/ops/shipping",
+          href: "/app/ops/packages",
           orderId: o.id,
           needsDate: true,
+        });
+      } else if (
+        o.shipment &&
+        (o.shipment.destination === "NAS" || o.shipment.destination === "FPO")
+      ) {
+        items.push({
+          id: `fly-${o.id}`,
+          who: o.clinic.name,
+          what: `Dispatch flight for ${o.orderNumber}`,
+          why: "Gates are green and the date is set. Doctor does not block cargo. Finance cannot fly.",
+          actionLabel: "Dispatch flight",
+          kind: "dispatch_flight",
+          href: "/app/flights",
+          shipmentId: o.shipment.id,
+          orderId: o.id,
         });
       } else {
         items.push({
@@ -345,7 +368,7 @@ export async function loadQueue(user: {
           why: "Manifest generated and Del confirmed the date.",
           actionLabel: "Mark shipped",
           kind: "mark_shipped",
-          href: "/app/ops/shipping",
+          href: "/app/ops/packages",
           orderId: o.id,
         });
       }
@@ -360,7 +383,7 @@ export async function loadQueue(user: {
           why: "Shipped · move clinic to In Transit. Logistics stays In Transit. Public clock is on.",
           actionLabel: "Mark in transit",
           kind: "mark_in_transit",
-          href: "/app/ops/shipping",
+          href: "/app/ops/packages",
           orderId: o.id,
         });
       } else {
@@ -371,9 +394,51 @@ export async function loadQueue(user: {
           why: "In Transit · close both machines (Delivered / Delivered/Closed).",
           actionLabel: "Mark delivered",
           kind: "mark_delivered",
-          href: "/app/ops/shipping",
+          href: "/app/ops/packages",
           orderId: o.id,
         });
+      }
+    }
+
+    for (const f of flights) {
+      const who = f.shipments[0]?.clinicOrder?.clinic.name ?? f.shipments[0]?.consignee ?? f.flightCode;
+      if (f.phase === "T48_PREP") {
+        items.push({
+          id: `frz-${f.id}`,
+          who,
+          what: `Freeze manifest ${f.flightCode}`,
+          why: "T-24 · lock the manifest. Doctor does not need to be on the phone.",
+          actionLabel: "Freeze manifest",
+          kind: "freeze_manifest",
+          href: "/app/flights",
+          flightId: f.id,
+        });
+      } else if (f.phase === "T24_FREEZE") {
+        items.push({
+          id: `gng-${f.id}`,
+          who,
+          what: `Go / no-go ${f.flightCode}`,
+          why: "T-6 · Del owns the call. Then dispatch.",
+          actionLabel: "Call GO",
+          kind: "go_no_go",
+          href: "/app/flights",
+          flightId: f.id,
+        });
+      } else if (f.phase === "T6_GO_NO_GO" && f.goNoGo !== "NO_GO") {
+        const ship = f.shipments[0];
+        if (ship) {
+          items.push({
+            id: `disp-${f.id}`,
+            who,
+            what: `Dispatch ${f.flightCode}`,
+            why: "GO is in. Dispatch even if a doctor placed the clinic order.",
+            actionLabel: "Dispatch flight",
+            kind: "dispatch_flight",
+            href: "/app/flights",
+            shipmentId: ship.id,
+            flightId: f.id,
+          });
+        }
       }
     }
 
@@ -388,7 +453,7 @@ export async function loadQueue(user: {
           why: `${SHIPMENT_LABEL.ORIGIN_RECEIVED_HOLD} · gates are green. Public clock starts after release.`,
           actionLabel: "Release / manifest",
           kind: "release_shipment",
-          href: "/app/ops/shipping",
+          href: "/app/ops/packages",
           shipmentId: s.id,
         });
       } else {

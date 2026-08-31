@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   description: PUBLIC_LINE,
   keywords: ["MedStead", "clinic supply", "medical freight", TAGLINE],
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: [{ url: "/medstead-logo.svg", type: "image/svg+xml" }, { url: "/favicon.svg" }] },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

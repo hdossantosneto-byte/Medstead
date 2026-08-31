@@ -1,6 +1,14 @@
 "use server";
 
-import { ClinicOrderStatus, CrmStage, GateName, GateState, ShipmentStatus } from "@prisma/client";
+import {
+  ClinicOrderStatus,
+  CrmStage,
+  FlightCorridor,
+  FlightPhase,
+  GateName,
+  GateState,
+  ShipmentStatus,
+} from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import {
   CLINIC_ORDER_STATUSES,
@@ -22,6 +30,9 @@ function revalidateApp() {
   revalidatePath("/app/admin");
   revalidatePath("/app/ops");
   revalidatePath("/app/finance");
+  revalidatePath("/app/ops/packages");
+  revalidatePath("/app/ops/orders");
+  revalidatePath("/app/flights");
 }
 
 async function writeOrderActivity(
@@ -410,6 +421,107 @@ export async function createFreightQuote(input: {
   return { ok: true, quoteId: quote.id, quoteNumber: quote.quoteNumber, ...amounts, shipmentCode };
 }
 
+function corridorForDest(destination: string): FlightCorridor | null {
+  if (destination === "NAS") return "FLL_NAS";
+  if (destination === "FPO") return "FLL_FPO";
+  if (destination === "MSY") return "FLL_MSY";
+  return null;
+}
+
+async function nextFlightCode(corridor: FlightCorridor) {
+  const n = await prisma.flight.count();
+  return `FL-${corridor.replace("_", "-")}-${String(n + 1).padStart(3, "0")}`;
+}
+
+export async function dispatchFlight(shipmentId: string) {
+  const actor = await requireRole(["OPS"]);
+  const shipment = await prisma.shipment.findUnique({
+    where: { id: shipmentId },
+    include: { gates: true, clinicOrder: { include: { invoice: true } }, flight: true },
+  });
+  if (!shipment) return { error: "Package not found." };
+  const corridor = corridorForDest(shipment.destination);
+  if (!corridor) return { error: "No flight corridor for this destination." };
+  if (corridor === "FLL_MSY") return { error: "Gulf Coast / New Orleans is not live yet." };
+  const allGreen =
+    shipment.gates.length === GATE_ORDER.length &&
+    shipment.gates.every((g) => g.state === "GREEN");
+  if (!allGreen) return { error: "All six gates must be green before dispatch." };
+  if (shipment.clinicOrder?.invoice && shipment.clinicOrder.invoice.status !== "paid") {
+    return { error: "Finance must mark paid / credit before dispatch." };
+  }
+  if (
+    shipment.status !== "RELEASED_MANIFESTED" &&
+    shipment.status !== "IN_TRANSIT" &&
+    shipment.clinicOrder?.status !== "MANIFEST_GENERATED" &&
+    shipment.clinicOrder?.status !== "SHIPPED"
+  ) {
+    return { error: "Release / manifest first. Doctor does not need to approve dispatch." };
+  }
+
+  let flight = shipment.flight;
+  if (!flight) {
+    flight = await prisma.flight.create({
+      data: {
+        flightCode: await nextFlightCode(corridor),
+        corridor,
+        live: true,
+        phase: "DEPARTED",
+        goNoGo: "GO",
+        origin: "FLL",
+        destination: shipment.destination,
+        dispatchedAt: new Date(),
+        activityLine: "Del dispatched flight · doctor does not block cargo.",
+      },
+    });
+    await prisma.shipment.update({ where: { id: shipmentId }, data: { flightId: flight.id } });
+  } else {
+    if (flight.corridor === "FLL_MSY" || !flight.live) {
+      return { error: "This corridor is not live." };
+    }
+    await prisma.flight.update({
+      where: { id: flight.id },
+      data: {
+        phase: "DEPARTED",
+        goNoGo: "GO",
+        dispatchedAt: new Date(),
+        activityLine: "Del dispatched flight · clinic order follows to In Transit.",
+      },
+    });
+  }
+
+  const line =
+    "Del dispatched flight · package is In Transit. Public clock is on. Doctor does not need a call.";
+  await advanceShipment(shipmentId, "IN_TRANSIT", actor.id, line);
+  revalidateApp();
+  return { ok: true, flightCode: flight.flightCode };
+}
+
+export async function setFlightPhase(flightId: string, phase: FlightPhase, goNoGo?: string) {
+  const actor = await requireRole(["OPS"]);
+  const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+  if (!flight) return { error: "Flight not found." };
+  if (!flight.live) return { error: "This corridor is not live yet." };
+  await prisma.flight.update({
+    where: { id: flightId },
+    data: {
+      phase,
+      goNoGo: goNoGo ?? flight.goNoGo,
+      activityLine:
+        phase === "T24_FREEZE"
+          ? "Del froze the manifest · T-6 go/no-go is next."
+          : phase === "T6_GO_NO_GO"
+            ? goNoGo === "NO_GO"
+              ? "Del called no-go · flight stays on the ground."
+              : "Del called GO · dispatch when the package is released."
+            : `Flight moved to ${phase}.`,
+    },
+  });
+  void actor;
+  revalidateApp();
+  return { ok: true };
+}
+
 export async function ensureCustomerWarehouse() {
   const user = await requireUser();
   if (user.warehouseCode) return user.warehouseCode;
@@ -427,6 +539,7 @@ export async function runNextAction(input: {
   crmId?: string;
   gate?: GateName;
   date?: string;
+  flightId?: string;
 }) {
   if (input.kind === "open") return { ok: true };
 
@@ -633,6 +746,16 @@ export async function runNextAction(input: {
 
   if (input.kind === "release_shipment" && input.shipmentId) {
     return setShipmentStatus(input.shipmentId, "RELEASED_MANIFESTED");
+  }
+
+  if (input.kind === "freeze_manifest" && input.flightId) {
+    return setFlightPhase(input.flightId, "T24_FREEZE");
+  }
+  if (input.kind === "go_no_go" && input.flightId) {
+    return setFlightPhase(input.flightId, "T6_GO_NO_GO", "GO");
+  }
+  if (input.kind === "dispatch_flight" && input.shipmentId) {
+    return dispatchFlight(input.shipmentId);
   }
 
   return { error: "Unknown next action." };

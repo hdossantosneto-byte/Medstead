@@ -78,6 +78,7 @@ async function main() {
   await prisma.manifest.deleteMany();
   await prisma.clinicOrderItem.deleteMany();
   await prisma.shipment.deleteMany();
+  await prisma.flight.deleteMany();
   await prisma.freightQuote.deleteMany();
   await prisma.clinicOrder.deleteMany();
   await prisma.inventoryItem.deleteMany();
@@ -280,6 +281,12 @@ async function main() {
     {
       email: "ops@medstead.demo",
       name: "Chris Okonkwo",
+      role: "OPS",
+      active: true,
+    },
+    {
+      email: "del@medstead.demo",
+      name: "Del",
       role: "OPS",
       active: true,
     },
@@ -640,6 +647,19 @@ async function main() {
     paid: true,
     withManifest: true,
     activityLine: "Delivered · record closed.",
+  });
+
+  await makeOrder({
+    number: "CO-1008",
+    clinicId: bethel.id,
+    userId: createdUsers["doctor@medstead.demo"],
+    status: "MANIFEST_GENERATED",
+    promisedDate: new Date("2026-09-05"),
+    items: [{ product: intlIv, qty: 2, market: "INTL" }],
+    withInvoice: true,
+    paid: true,
+    withManifest: true,
+    activityLine: "Del confirmed the date · Dispatch flight. Doctor does not block cargo.",
   });
 
   const customerId = createdUsers["customer@medstead.demo"];

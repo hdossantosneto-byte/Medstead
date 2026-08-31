@@ -49,6 +49,7 @@ function QueueCard({ item }: { item: QueueItem }) {
       crmId: item.crmId,
       gate: item.gate,
       date: item.needsDate ? date : undefined,
+      flightId: item.flightId,
     });
     setBusy(false);
     if (res && "error" in res && res.error) {
@@ -93,6 +94,8 @@ export function DedicatedNextButton({
   shipmentId,
   clinicId,
   crmId,
+  flightId,
+  gate,
 }: {
   kind: QueueKind;
   label: string;
@@ -101,6 +104,8 @@ export function DedicatedNextButton({
   shipmentId?: string;
   clinicId?: string;
   crmId?: string;
+  flightId?: string;
+  gate?: import("@prisma/client").GateName;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -120,6 +125,8 @@ export function DedicatedNextButton({
             shipmentId,
             clinicId,
             crmId,
+            flightId,
+            gate,
           });
           setBusy(false);
           if (res && "error" in res && res.error) {

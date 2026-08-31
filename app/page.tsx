@@ -25,9 +25,9 @@ export default function HomePage() {
         </p>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-navy-800/80">{PUBLIC_LINE}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button href="/freight">Get a freight quote</Button>
-          <Button href="/track" variant="ghost">
-            Track a shipment
+          <Button href="/orders">Orders & Packages</Button>
+          <Button href="/freight" variant="ghost">
+            + New order
           </Button>
           <Button href="/demo" variant="secondary">
             Try the demo

@@ -40,7 +40,7 @@ export function Button({
     danger: "bg-red-700 text-white hover:bg-red-800",
   }[variant];
   const cls = clsx(
-    "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50",
+    "inline-flex min-h-tap items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50",
     styles,
     className,
   );
