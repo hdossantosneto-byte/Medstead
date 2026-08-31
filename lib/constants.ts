@@ -58,6 +58,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   MEDSTEAD_ADMIN: "MedStead admin",
   OPS: "Medication operations",
   FINANCE: "Finance",
+  PILOT: "Pilot",
 };
 
 export const CLINIC_ROLES: Role[] = ["CLINIC_ADMIN", "DOCTOR", "PHARMACY"];
@@ -238,10 +239,55 @@ export const QUOTE_STATUS_LABEL: Record<string, string> = {
   APPROVED: "Approved",
 };
 
+export const AIR_ARM = "MTG Airlines";
+export const PART135_BANNER =
+  "NOT LIVE / FUTURE 135. MTG Airlines is not a certificated Part 135 operator in this app. No certificate number is on file. Hairson fills aircraft, crew, duty/rest, ops specs, and maintenance later.";
+
+export const TRIP_TYPE_LABEL: Record<string, string> = {
+  MEDICAL_CARGO: "Medical cargo",
+  COMPANY_TRAVEL: "Company travel",
+  PERSONAL_GOODS: "Personal goods",
+  DOCTOR_CHARTER: "Doctor charter",
+  RESCUE_ORGAN: "Rescue / organ trip",
+};
+
+export const OS_ARMS = [
+  {
+    href: "/app/flights",
+    title: "MTG Airlines",
+    body: "Dispatch airline. Cargo, travel, charter, rescue organ trips. Del owns the board.",
+  },
+  {
+    href: "/app/orders",
+    title: "3PL for meds",
+    body: "Clinic shop, WareSpace C15, Orders & Packages, six-gate release.",
+  },
+  {
+    href: "/app/finance",
+    title: "Accounting",
+    body: "Invoices, paid/credit, Zelle payees. Finance owns the books.",
+  },
+  {
+    href: "/app/admin",
+    title: "Company management",
+    body: "CRM, roles, clinic approvals, next-action queues. One login.",
+  },
+] as const;
+
+export const AIR_TRIP_STATUS_LABEL: Record<string, string> = {
+  REQUESTED: "Requested",
+  SCHEDULED: "Scheduled",
+  DISPATCHED: "Dispatched",
+  COMPLETE: "Complete",
+  HOLD: "Hold",
+};
+
 export const AIRCRAFT_ROUTING = [
-  { kind: "Clinic / medical cargo", route: "Islander / air corridor" },
-  { kind: "Rush", route: "Express Air" },
-  { kind: "Bulk", route: "Standard Sea" },
+  { kind: "Medical cargo", route: "FLL–NAS / FLL–FPO · Del dispatch" },
+  { kind: "Company travel", route: "MTG Airlines air arm · Del dispatch" },
+  { kind: "Personal goods", route: "On a company or chartered flight" },
+  { kind: "Doctor charter", route: "Passenger charter · not a clinic supply order" },
+  { kind: "Rescue / organ trip", route: "Time-critical dispatch · not an OPO / UNOS claim" },
 ] as const;
 
 export const CUSTODY_LABEL: Record<string, string> = {

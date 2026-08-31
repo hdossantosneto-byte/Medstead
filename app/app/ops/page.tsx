@@ -26,16 +26,21 @@ export default async function OpsHome() {
       s.gates.length < GATE_ORDER.length || s.gates.some((g) => g.state !== "GREEN"),
   ).length;
   const allGreen = waitingGates === 0;
-  const dispatchReady = del && next?.kind === "dispatch_flight" && allGreen;
+  const dispatchReady =
+    del &&
+    (next?.kind === "dispatch_flight" ||
+      next?.kind === "dispatch_air_trip" ||
+      next?.kind === "notify_pilots") &&
+    (next.kind !== "dispatch_flight" || allGreen);
 
   return (
     <div>
       <PageHeader
-        eyebrow={del ? "Del · flight ops" : "Warehouse"}
+        eyebrow={del ? "Del · MTG Airlines" : "Warehouse"}
         title={`Hello, ${user.name.split(" ")[0]}`}
         lede={
           del
-            ? "Dispatch first. Doctors do not block FLL–NAS / FLL–FPO cargo."
+            ? "Dispatch airline first. Doctors do not block cargo. Notify pilots in-app."
             : "Pick, pack, and clear gates. Del owns dates and dispatch."
         }
       />
@@ -46,11 +51,11 @@ export default async function OpsHome() {
           className="mb-4 flex min-h-[140px] flex-col justify-between rounded-3xl border-2 border-navy-900 bg-navy-900 p-6 text-white"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">
-            Dispatch / flights
+            MTG Airlines
           </p>
-          <p className="font-display text-4xl">Dispatch flight</p>
+          <p className="font-display text-4xl">Dispatch airline</p>
           <p className="text-sm text-white/70">
-            {flights} live flight-days · Mexico and MSY labeled, not live
+            {flights} live trips · Mexico and MSY labeled, not live
           </p>
         </Link>
       )}

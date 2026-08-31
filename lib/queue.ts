@@ -1,11 +1,13 @@
 import type { GateName, Role } from "@prisma/client";
 import {
+  AIR_ARM,
   CLINIC_ORDER_LABEL,
   CLINIC_ROLES,
   CRM_LABEL,
   GATE_LABEL,
   GATE_ORDER,
   SHIPMENT_LABEL,
+  TRIP_TYPE_LABEL,
 } from "./constants";
 import { isDel } from "./org";
 import { prisma } from "./prisma";
@@ -33,6 +35,10 @@ export type QueueKind =
   | "freeze_manifest"
   | "go_no_go"
   | "dispatch_flight"
+  | "dispatch_air_trip"
+  | "schedule_charter"
+  | "notify_pilots"
+  | "acknowledge_brief"
   | "approve_quote"
   | "open";
 
@@ -515,9 +521,75 @@ export async function loadQueue(user: {
       }
     }
 
-    const delOnly = new Set(["dispatch_flight", "set_delivery_date", "freeze_manifest", "go_no_go"]);
+    const airTrips = await prisma.flight.findMany({
+      where: {
+        tripStatus: { in: ["REQUESTED", "SCHEDULED", "DISPATCHED"] },
+        phase: { not: "POD" },
+      },
+      include: { requestedBy: true },
+      orderBy: { createdAt: "desc" },
+    });
+    for (const f of airTrips) {
+      const who = f.requestedBy?.name ?? f.passengerNote ?? AIR_ARM;
+      const rescue = f.tripType === "RESCUE_ORGAN";
+      if (f.tripType !== "MEDICAL_CARGO" && f.tripStatus === "REQUESTED") {
+        items.push({
+          id: `sch-${f.id}`,
+          who,
+          what: `Schedule ${TRIP_TYPE_LABEL[f.tripType]} ${f.flightCode}`,
+          why: f.activityLine || "Del owns the air arm. Finance cannot fly. No WhatsApp.",
+          actionLabel: "Schedule trip",
+          kind: "schedule_charter",
+          href: "/app/flights",
+          flightId: f.id,
+        });
+      } else if (f.tripType !== "MEDICAL_CARGO" && f.tripStatus === "SCHEDULED" && f.live && f.corridor !== "FLL_MSY") {
+        items.push({
+          id: `airdisp-${f.id}`,
+          who,
+          what: rescue ? `Dispatch TIME-CRITICAL ${f.flightCode}` : `Dispatch ${f.flightCode}`,
+          why: rescue
+            ? "Dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app."
+            : `${TRIP_TYPE_LABEL[f.tripType]} · doctors do not block the air arm.`,
+          actionLabel: "Dispatch flight",
+          kind: "dispatch_air_trip",
+          href: "/app/flights",
+          flightId: f.id,
+        });
+      }
+      if (!f.pilotAdvisedAt && (f.timeCritical || f.tripStatus === "DISPATCHED" || rescue)) {
+        items.push({
+          id: `adv-${f.id}`,
+          who,
+          what: `Notify pilots · ${f.flightCode}`,
+          why: "In-app brief for the assigned pilot. Writes an activity line. No text thread.",
+          actionLabel: "Notify pilots",
+          kind: "notify_pilots",
+          href: "/app/flights",
+          flightId: f.id,
+        });
+      }
+    }
+
+    const delOnly = new Set([
+      "dispatch_flight",
+      "dispatch_air_trip",
+      "schedule_charter",
+      "notify_pilots",
+      "set_delivery_date",
+      "freeze_manifest",
+      "go_no_go",
+    ]);
     if (isDel(user)) {
-      const first = ["dispatch_flight", "set_delivery_date", "freeze_manifest", "go_no_go"];
+      const first = [
+        "notify_pilots",
+        "dispatch_air_trip",
+        "dispatch_flight",
+        "schedule_charter",
+        "set_delivery_date",
+        "freeze_manifest",
+        "go_no_go",
+      ];
       items.sort((a, b) => {
         const ap = first.indexOf(a.kind);
         const bp = first.indexOf(b.kind);
@@ -578,6 +650,35 @@ export async function loadQueue(user: {
           href: "/app/clinic/catalog",
         });
       }
+      const pendingCharter = await prisma.flight.findFirst({
+        where: {
+          requestedById: user.id,
+          tripType: "DOCTOR_CHARTER",
+          tripStatus: { in: ["REQUESTED", "SCHEDULED"] },
+        },
+      });
+      if (pendingCharter) {
+        items.push({
+          id: `chtr-${pendingCharter.id}`,
+          who: AIR_ARM,
+          what: `${pendingCharter.flightCode} is ${pendingCharter.tripStatus.toLowerCase()}`,
+          why: "Passenger charter — not a clinic supply order. Del owns dispatch. No totals on this screen.",
+          actionLabel: "See charter",
+          kind: "open",
+          href: "/app/clinic/charter",
+          flightId: pendingCharter.id,
+        });
+      } else {
+        items.push({
+          id: "clinic-charter",
+          who: AIR_ARM,
+          what: "Request a doctor charter",
+          why: "Passenger flight for a doctor or clinic — not a supply order. Del schedules. No finance totals.",
+          actionLabel: "Request charter",
+          kind: "open",
+          href: "/app/clinic/charter",
+        });
+      }
       const latestOpen = orders.find((o) => o.status !== "DELIVERED" && !due.some((d) => d.id === o.id));
       if (latestOpen) {
         items.push({
@@ -622,6 +723,68 @@ export async function loadQueue(user: {
         actionLabel: "Shop & Ship",
         kind: "open",
         href: "/shop-and-ship",
+      });
+    }
+    items.push({
+      id: "cust-personal-air",
+      who: AIR_ARM,
+      what: "Move personal goods on a company flight",
+      why: "Household / personal cargo on an MTG Airlines trip. Public freight IDs stay MS-.",
+      actionLabel: "Request move",
+      kind: "open",
+      href: "/app/travel",
+    });
+  }
+
+  if (user.role === "MEDSTEAD_ADMIN") {
+    items.push({
+      id: "admin-company-travel",
+      who: AIR_ARM,
+      what: "Request company travel",
+      why: "Hairson and company people. Del dispatches. This is not a second company homepage.",
+      actionLabel: "Company travel",
+      kind: "open",
+      href: "/app/travel",
+    });
+  }
+
+  if (user.role === "PILOT") {
+    const briefs = await prisma.flight.findMany({
+      where: {
+        assignedPilotId: user.id,
+        pilotAdvisedAt: { not: null },
+        tripStatus: { in: ["SCHEDULED", "DISPATCHED"] },
+        phase: { not: "POD" },
+      },
+      orderBy: [{ timeCritical: "desc" }, { createdAt: "desc" }],
+    });
+    for (const f of briefs) {
+      const kind =
+        f.tripType === "RESCUE_ORGAN"
+          ? "organ"
+          : f.tripType === "DOCTOR_CHARTER" || f.tripType === "COMPANY_TRAVEL"
+            ? "passengers"
+            : "cargo";
+      items.push({
+        id: `pilot-${f.id}`,
+        who: AIR_ARM,
+        what: f.timeCritical ? `TIME-CRITICAL brief ${f.flightCode}` : `Trip brief ${f.flightCode}`,
+        why: `${TRIP_TYPE_LABEL[f.tripType]} · ${f.origin} → ${f.destination} · ${kind}. ${f.activityLine || "Acknowledge in-app. Do not WhatsApp Del."}`,
+        actionLabel: "Acknowledge brief",
+        kind: "acknowledge_brief",
+        href: "/app/flights",
+        flightId: f.id,
+      });
+    }
+    if (briefs.length === 0) {
+      items.push({
+        id: "pilot-clear",
+        who: AIR_ARM,
+        what: "No trip brief waiting",
+        why: "When Del dispatches or taps Notify pilots, the brief lands here.",
+        actionLabel: "Open board",
+        kind: "open",
+        href: "/app/flights",
       });
     }
   }

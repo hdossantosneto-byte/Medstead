@@ -5,18 +5,15 @@ import { usePathname } from "next/navigation";
 import { clsx } from "@/lib/format";
 
 const TABS = [
-  { href: "/app/ops", label: "Home", match: (p: string) => p === "/app/ops" },
   { href: "/app", label: "Next", match: (p: string) => p === "/app" },
-  { href: "/app/orders", label: "Orders", match: (p: string) => p === "/app/orders" || p.startsWith("/app/ops/orders") },
-  { href: "/app/ops/packages", label: "Packages", match: (p: string) => p.startsWith("/app/ops/packages") || p.startsWith("/app/ops/shipping") },
-  { href: "/app/ops/more", label: "More", match: (p: string) => p.startsWith("/app/ops/more") || p.startsWith("/app/flights") || p.startsWith("/app/travel") || p.startsWith("/app/ops/inventory") || p.startsWith("/app/ops/compliance") || p.startsWith("/app/ops/catalog") },
+  { href: "/app/flights", label: "Board", match: (p: string) => p.startsWith("/app/flights") },
 ];
 
-export function OpsBottomNav() {
+export function PilotBottomNav() {
   const path = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-navy-900/10 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <ul className="mx-auto grid max-w-lg grid-cols-5">
+      <ul className="mx-auto grid max-w-lg grid-cols-2">
         {TABS.map((tab) => {
           const on = tab.match(path);
           return (

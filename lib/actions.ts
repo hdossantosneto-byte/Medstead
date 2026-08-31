@@ -5,6 +5,7 @@ import {
   CrmStage,
   FlightCorridor,
   FlightPhase,
+  FlightTripType,
   GateName,
   GateState,
   ShipmentStatus,
@@ -35,6 +36,9 @@ function revalidateApp() {
   revalidatePath("/app/ops/packages");
   revalidatePath("/app/ops/orders");
   revalidatePath("/app/flights");
+  revalidatePath("/app/flights/135");
+  revalidatePath("/app/travel");
+  revalidatePath("/app/clinic/charter");
   revalidatePath("/app/finance/payroll");
   revalidatePath("/app/finance/quotes");
   revalidatePath("/app/finance/expenses");
@@ -553,9 +557,58 @@ function corridorForDest(destination: string): FlightCorridor | null {
   return null;
 }
 
-async function nextFlightCode(corridor: FlightCorridor) {
+async function nextFlightCode(corridor: FlightCorridor, tripType: FlightTripType = "MEDICAL_CARGO") {
   const n = await prisma.flight.count();
-  return `FL-${corridor.replace("_", "-")}-${String(n + 1).padStart(3, "0")}`;
+  const seq = String(n + 1).padStart(3, "0");
+  if (tripType === "MEDICAL_CARGO") {
+    return `FL-${corridor.replace("_", "-")}-${seq}`;
+  }
+  const tag =
+    tripType === "COMPANY_TRAVEL"
+      ? "TRAV"
+      : tripType === "PERSONAL_GOODS"
+        ? "PERS"
+        : tripType === "RESCUE_ORGAN"
+          ? "RSC"
+          : "CHTR";
+  return `MTG-A-${tag}-${seq}`;
+}
+
+async function defaultPilotId() {
+  const pilot = await prisma.user.findFirst({ where: { role: "PILOT", active: true } });
+  return pilot?.id ?? null;
+}
+
+function airBrief(flight: {
+  flightCode: string;
+  tripType: string;
+  origin: string;
+  destination: string;
+  timeCritical?: boolean;
+}) {
+  const kind =
+    flight.tripType === "RESCUE_ORGAN"
+      ? "organ"
+      : flight.tripType === "DOCTOR_CHARTER" || flight.tripType === "COMPANY_TRAVEL"
+        ? "passengers"
+        : "cargo";
+  const clock = flight.timeCritical ? "TIME-CRITICAL clock on" : "scheduled";
+  return `${flight.flightCode} · ${flight.tripType.replaceAll("_", " ")} · ${flight.origin}→${flight.destination} · ${kind} · ${clock}`;
+}
+
+async function advisePilot(flightId: string, actorLine: string) {
+  const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+  if (!flight) return;
+  const pilotId = flight.assignedPilotId ?? (await defaultPilotId());
+  const brief = airBrief(flight);
+  await prisma.flight.update({
+    where: { id: flightId },
+    data: {
+      assignedPilotId: pilotId ?? undefined,
+      pilotAdvisedAt: new Date(),
+      activityLine: `${actorLine} Pilot advised in-app · ${brief}. No WhatsApp.`,
+    },
+  });
 }
 
 export async function dispatchFlight(shipmentId: string) {
@@ -589,8 +642,10 @@ export async function dispatchFlight(shipmentId: string) {
   if (!flight) {
     flight = await prisma.flight.create({
       data: {
-        flightCode: await nextFlightCode(corridor),
+        flightCode: await nextFlightCode(corridor, "MEDICAL_CARGO"),
         corridor,
+        tripType: "MEDICAL_CARGO",
+        tripStatus: "DISPATCHED",
         live: true,
         phase: "DEPARTED",
         goNoGo: "GO",
@@ -610,6 +665,7 @@ export async function dispatchFlight(shipmentId: string) {
       data: {
         phase: "DEPARTED",
         goNoGo: "GO",
+        tripStatus: "DISPATCHED",
         dispatchedAt: new Date(),
         activityLine: "Del dispatched flight · clinic order follows to In Transit.",
       },
@@ -619,6 +675,7 @@ export async function dispatchFlight(shipmentId: string) {
   const line =
     "Del dispatched flight · package is In Transit. Public clock is on. Doctor does not need a call.";
   await advanceShipment(shipmentId, "IN_TRANSIT", actor.id, line);
+  await advisePilot(flight.id, "Del dispatched medical cargo ·");
   revalidateApp();
   return { ok: true, flightCode: flight.flightCode };
 }
@@ -645,6 +702,164 @@ export async function setFlightPhase(flightId: string, phase: FlightPhase, goNoG
     },
   });
   void actor;
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function requestAirTrip(form: {
+  tripType: FlightTripType;
+  origin: string;
+  destination: string;
+  purpose: string;
+  passengerNote: string;
+  custodyNote?: string;
+  temperatureNote?: string;
+}) {
+  const user = await requireUser();
+  if (user.role === "FINANCE" || user.role === "PILOT") {
+    return { error: "Finance and pilots do not open trips. Del owns the board." };
+  }
+
+  const tripType = form.tripType;
+  if (tripType === "DOCTOR_CHARTER") {
+    if (!CLINIC_ROLES.includes(user.role)) return { error: "Only a clinic seat can request a doctor charter." };
+    if (!clinicApproved(user) || !user.clinic) return { error: "Clinic must be approved first." };
+  } else if (tripType === "COMPANY_TRAVEL") {
+    if (user.role !== "MEDSTEAD_ADMIN" && user.role !== "OPS") {
+      return { error: "Company travel is for MedStead people. Del dispatches." };
+    }
+  } else if (tripType === "PERSONAL_GOODS") {
+    if (user.role !== "CUSTOMER" && user.role !== "MEDSTEAD_ADMIN" && user.role !== "OPS") {
+      return { error: "Personal goods moves start from a freight seat or admin." };
+    }
+  } else if (tripType === "RESCUE_ORGAN") {
+    if (user.role !== "MEDSTEAD_ADMIN" && user.role !== "OPS" && !CLINIC_ROLES.includes(user.role)) {
+      return { error: "Rescue organ trips are opened by ops, admin, or an approved clinic." };
+    }
+    if (CLINIC_ROLES.includes(user.role) && (!clinicApproved(user) || !user.clinic)) {
+      return { error: "Clinic must be approved first." };
+    }
+  } else {
+    return { error: "Medical cargo is dispatched from the package board, not this form." };
+  }
+
+  const dest = form.destination.trim().toUpperCase();
+  const corridor = corridorForDest(dest);
+  if (!corridor) return { error: "Pick NAS, FPO, or MSY. Mexico / MSY stay labeled not live." };
+  const live = corridor === "FLL_NAS" || corridor === "FLL_FPO";
+  const purpose = form.purpose.trim();
+  const passengerNote = form.passengerNote.trim();
+  if (!purpose || !passengerNote) return { error: "Purpose and who is on the trip are required. No patient names." };
+
+  const rescue = tripType === "RESCUE_ORGAN";
+  await prisma.flight.create({
+    data: {
+      flightCode: await nextFlightCode(corridor, tripType),
+      corridor,
+      tripType,
+      tripStatus: rescue ? "SCHEDULED" : "REQUESTED",
+      live,
+      phase: rescue ? "T6_GO_NO_GO" : "T48_PREP",
+      goNoGo: rescue ? "GO" : null,
+      origin: form.origin.trim().toUpperCase() || "FLL",
+      destination: dest,
+      requestedById: user.id,
+      passengerNote,
+      purpose,
+      timeCritical: rescue,
+      clockStartedAt: rescue ? new Date() : null,
+      custodyNote: rescue ? form.custodyNote?.trim() || "Chain of custody open · in-app only." : null,
+      temperatureNote: rescue ? form.temperatureNote?.trim() || "Temperature note TBD." : null,
+      assignedPilotId: (await defaultPilotId()) ?? undefined,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine: rescue
+        ? "TIME-CRITICAL rescue organ trip opened · dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app."
+        : tripType === "DOCTOR_CHARTER"
+          ? "Doctor charter requested · not a clinic supply order. Waiting on Del to schedule. No WhatsApp."
+          : "Air-arm request in. Del owns dispatch across trip types.",
+    },
+  });
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function scheduleAirTrip(flightId: string) {
+  const actor = await requireRole(["OPS"]);
+  if (!isDel(actor)) return { error: "Only Del schedules MTG Airlines trips." };
+  const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+  if (!flight) return { error: "Trip not found." };
+  if (!flight.live || flight.corridor === "FLL_MSY") {
+    return { error: "This corridor is not live yet." };
+  }
+  await prisma.flight.update({
+    where: { id: flightId },
+    data: {
+      tripStatus: "SCHEDULED",
+      phase: "T6_GO_NO_GO",
+      goNoGo: "GO",
+      activityLine: "Del scheduled the trip · Dispatch is next. Finance cannot fly.",
+    },
+  });
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function dispatchAirTrip(flightId: string) {
+  const actor = await requireRole(["OPS"]);
+  if (!isDel(actor)) return { error: "Only Del dispatches. Warehouse ops pick and pack." };
+  const flight = await prisma.flight.findUnique({
+    where: { id: flightId },
+    include: { shipments: true },
+  });
+  if (!flight) return { error: "Trip not found." };
+  if (!flight.live || flight.corridor === "FLL_MSY") {
+    return { error: "This corridor is not live yet." };
+  }
+  const cargo = flight.shipments[0];
+  if (flight.tripType === "MEDICAL_CARGO" && cargo) {
+    return dispatchFlight(cargo.id);
+  }
+  await prisma.flight.update({
+    where: { id: flightId },
+    data: {
+      phase: "DEPARTED",
+      goNoGo: "GO",
+      tripStatus: "DISPATCHED",
+      dispatchedAt: new Date(),
+      assignedPilotId: flight.assignedPilotId ?? (await defaultPilotId()) ?? undefined,
+      activityLine: "Del dispatched MTG Airlines trip · doctor does not block the air arm.",
+    },
+  });
+  await advisePilot(flightId, "Del dispatched ·");
+  revalidateApp();
+  return { ok: true, flightCode: flight.flightCode };
+}
+
+export async function notifyPilots(flightId: string) {
+  const actor = await requireRole(["OPS"]);
+  if (!isDel(actor)) return { error: "Only Del notifies pilots in-app." };
+  const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+  if (!flight) return { error: "Trip not found." };
+  await advisePilot(flightId, "Notify pilots ·");
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function acknowledgePilotBrief(flightId: string) {
+  const user = await requireUser();
+  if (user.role !== "PILOT") return { error: "Only the assigned pilot acknowledges a brief." };
+  const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+  if (!flight) return { error: "Trip not found." };
+  if (flight.assignedPilotId && flight.assignedPilotId !== user.id) {
+    return { error: "This brief is assigned to another pilot." };
+  }
+  await prisma.flight.update({
+    where: { id: flightId },
+    data: {
+      assignedPilotId: user.id,
+      activityLine: `Pilot ${user.name} acknowledged in-app · ${airBrief(flight)}. No text thread.`,
+    },
+  });
   revalidateApp();
   return { ok: true };
 }
@@ -930,6 +1145,18 @@ export async function runNextAction(input: {
   }
   if (input.kind === "dispatch_flight" && input.shipmentId) {
     return dispatchFlight(input.shipmentId);
+  }
+  if (input.kind === "dispatch_air_trip" && input.flightId) {
+    return dispatchAirTrip(input.flightId);
+  }
+  if (input.kind === "schedule_charter" && input.flightId) {
+    return scheduleAirTrip(input.flightId);
+  }
+  if (input.kind === "notify_pilots" && input.flightId) {
+    return notifyPilots(input.flightId);
+  }
+  if (input.kind === "acknowledge_brief" && input.flightId) {
+    return acknowledgePilotBrief(input.flightId);
   }
 
   return { error: "Unknown next action." };

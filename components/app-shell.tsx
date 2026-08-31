@@ -4,6 +4,7 @@ import { CLINIC_ROLES, ROLE_LABEL } from "@/lib/constants";
 import { Wordmark } from "./brand";
 import { CartBadge } from "./cart-badge";
 import { OpsBottomNav } from "./ops-bottom-nav";
+import { PilotBottomNav } from "./pilot-bottom-nav";
 import { SignOutButton } from "./sign-out-button";
 
 type NavItem = { href: string; label: string };
@@ -16,8 +17,12 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
       { href: "/shop-and-ship", label: "Shop & Ship" },
       { href: "/freight", label: "Ship Now" },
       { href: "/app/customer", label: "Your orders" },
+      { href: "/app/travel", label: "Personal goods" },
       { href: "/track", label: "Track Package" },
     );
+  }
+  if (role === "PILOT") {
+    base.push({ href: "/app/flights", label: "MTG Airlines" });
   }
   if (CLINIC_ROLES.includes(role)) {
     if (clinicOk) {
@@ -25,6 +30,7 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
         { href: "/app/clinic/catalog", label: "Shop" },
         { href: "/app/orders", label: "Orders & Packages" },
         { href: "/app/clinic/orders", label: "Your orders" },
+        { href: "/app/clinic/charter", label: "Doctor charter" },
       );
     } else {
       base.push({ href: "/app/clinic/pending", label: "Approval status" });
@@ -39,6 +45,8 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
       { href: "/app/admin/invoices", label: "Invoices" },
       { href: "/app/admin/manifests", label: "Manifests" },
       { href: "/app/admin/liaison", label: "Docs & liaison" },
+      { href: "/app/travel", label: "Company travel" },
+      { href: "/app/flights", label: "MTG Airlines" },
       { href: "/app/finance/payroll", label: "Payroll" },
       { href: "/app/finance/expenses", label: "Expenses" },
     );
@@ -68,6 +76,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const ops = role === "OPS";
+  const pilot = role === "PILOT";
   const items = ops ? [] : navFor(role, clinicOk);
   return (
     <div className="min-h-screen bg-sand">
@@ -94,8 +103,9 @@ export function AppShell({
           </nav>
         )}
       </header>
-      <main className={`mx-auto max-w-6xl px-4 py-6 ${ops ? "pb-28" : "pb-10"}`}>{children}</main>
+      <main className={`mx-auto max-w-6xl px-4 py-6 ${ops || pilot ? "pb-28" : "pb-10"}`}>{children}</main>
       {ops && <OpsBottomNav />}
+      {pilot && <PilotBottomNav />}
     </div>
   );
 }

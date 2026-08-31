@@ -45,13 +45,18 @@ const ACCOUNTS = [
   },
   {
     email: "del@medstead.demo",
-    role: "Del · ops",
-    note: "Dispatch / flights first. Doctors do not block cargo.",
+    role: "Del · MTG Airlines",
+    note: "Dispatch airline. Cargo, travel, charter, rescue. Doctors do not block cargo.",
+  },
+  {
+    email: "pilot@medstead.demo",
+    role: "Pilot",
+    note: "In-app trip brief. Acknowledge — no WhatsApp.",
   },
   {
     email: "finance@medstead.demo",
     role: "Finance",
-    note: "Invoices and payments. Cannot ship.",
+    note: "Accounting. Invoices and Zelle payees. Cannot fly.",
   },
 ];
 
@@ -94,7 +99,8 @@ export default function DemoPage() {
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-navy-800/80">
           <li>Enter as doctor — Shop the book or open Your orders. CO-1008 (Bethel) has Track package.</li>
           <li>Enter as finance — mark paid only if an invoice is waiting.</li>
-          <li>Enter as Del — tap <strong>Dispatch flight</strong> on the FLL–NAS package. The doctor does not block cargo.</li>
+          <li>Enter as Del — tap <strong>Dispatch flight</strong> on the FLL–NAS package, or Notify pilots on the rescue trip. The doctor does not block cargo.</li>
+          <li>Enter as pilot — acknowledge the in-app brief. No WhatsApp.</li>
           <li>Enter as doctor again — CO-1008 is In Transit. No call to Del.</li>
         </ol>
       </Card>

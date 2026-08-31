@@ -8,7 +8,9 @@ export default async function OpsMorePage() {
   const del = isDel(user);
   const links = del
     ? [
-        { href: "/app/flights", title: "Dispatch flight", body: "FLL–NAS, FLL–FPO. Mexico / MSY not live yet." },
+        { href: "/app/flights", title: "MTG Airlines", body: "Cargo, travel, charter, rescue. Mexico / MSY not live." },
+        { href: "/app/flights/135", title: "Part 135 readiness", body: "NOT LIVE / FUTURE 135. No certificate number." },
+        { href: "/app/travel", title: "Company travel", body: "Open a company or rescue trip. Del still dispatches." },
         { href: "/app/orders", title: "Orders & Packages", body: "Pick / pack and trackable packages." },
         { href: "/app/ops/compliance", title: "Six-gate release", body: "All green before dispatch." },
         { href: "/app/ops/inventory", title: "Inventory", body: "WareSpace C15 on-hand counts." },
@@ -25,8 +27,8 @@ export default async function OpsMorePage() {
     <div>
       <PageHeader
         eyebrow="More"
-        title={del ? "Flight + warehouse" : "Warehouse tools"}
-        lede={del ? "Dispatch first. Warehouse is Chris." : "Del owns dispatch. You own the floor."}
+        title={del ? "MTG Airlines + warehouse" : "Warehouse tools"}
+        lede={del ? "Dispatch airline first. Warehouse is Chris. Finance cannot fly." : "Del owns dispatch. You own the floor."}
       />
       <div className="grid gap-3">
         {links.map((l) => (

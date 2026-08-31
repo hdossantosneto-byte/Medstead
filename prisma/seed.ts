@@ -92,6 +92,7 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.clinic.deleteMany();
   await prisma.shipmentSequence.deleteMany();
+  await prisma.part135Readiness.deleteMany();
 
   const hash = await bcrypt.hash(PASSWORD, 10);
   const legal = loadLegalIntlRows();
@@ -292,6 +293,12 @@ async function main() {
       email: "del@medstead.demo",
       name: "Del",
       role: "OPS",
+      active: true,
+    },
+    {
+      email: "pilot@medstead.demo",
+      name: "Riley Chen",
+      role: "PILOT",
       active: true,
     },
     {
@@ -788,6 +795,112 @@ async function main() {
 
   await prisma.shipmentSequence.create({ data: { id: "global", lastN: 3 } });
 
+  const pilotId = createdUsers["pilot@medstead.demo"];
+  const adminId = createdUsers["admin@medstead.demo"];
+  const doctorId = createdUsers["doctor@medstead.demo"];
+  const customerUserId = createdUsers["customer@medstead.demo"];
+
+  await prisma.part135Readiness.create({
+    data: {
+      id: "mtg-airlines",
+      operatorName: "MTG Airlines",
+      live: false,
+      certificateNote:
+        "NOT LIVE / FUTURE 135. MTG Airlines is not a certificated Part 135 operator in this app. No certificate number is on file.",
+      aircraftNote: "",
+      crewNote: "",
+      dutyRestNote: "",
+      opsSpecsNote: "",
+      maintenanceNote: "",
+      onDemandCharter: false,
+      cargoOps: false,
+    },
+  });
+
+  await prisma.flight.create({
+    data: {
+      flightCode: "MTG-A-TRAV-001",
+      corridor: "FLL_NAS",
+      tripType: "COMPANY_TRAVEL",
+      tripStatus: "SCHEDULED",
+      live: true,
+      phase: "T6_GO_NO_GO",
+      goNoGo: "GO",
+      origin: "FLL",
+      destination: "NAS",
+      requestedById: adminId,
+      passengerNote: "Hairson + one MedStead seat",
+      purpose: "Company / business travel to the Nassau clinic corridor",
+      assignedPilotId: pilotId,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine: "Company travel scheduled · Del dispatch next. Finance cannot fly.",
+    },
+  });
+
+  await prisma.flight.create({
+    data: {
+      flightCode: "MTG-A-PERS-002",
+      corridor: "FLL_FPO",
+      tripType: "PERSONAL_GOODS",
+      tripStatus: "REQUESTED",
+      live: true,
+      phase: "T48_PREP",
+      origin: "FLL",
+      destination: "FPO",
+      requestedById: customerUserId,
+      passengerNote: "Household crate for Marcus Reed",
+      purpose: "Personal goods on a company flight — not a clinic supply order",
+      assignedPilotId: pilotId,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine: "Personal goods request · waiting on Del to schedule. No WhatsApp.",
+    },
+  });
+
+  await prisma.flight.create({
+    data: {
+      flightCode: "MTG-A-CHTR-003",
+      corridor: "FLL_NAS",
+      tripType: "DOCTOR_CHARTER",
+      tripStatus: "REQUESTED",
+      live: true,
+      phase: "T48_PREP",
+      origin: "FLL",
+      destination: "NAS",
+      requestedById: doctorId,
+      passengerNote: "Dr. James Bethel — passenger charter",
+      purpose: "Charter a flight to a doctor — not a clinic supply order",
+      assignedPilotId: pilotId,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine:
+        "Doctor charter requested · not a clinic supply order. Waiting on Del to schedule. No WhatsApp.",
+    },
+  });
+
+  await prisma.flight.create({
+    data: {
+      flightCode: "MTG-A-RSC-004",
+      corridor: "FLL_NAS",
+      tripType: "RESCUE_ORGAN",
+      tripStatus: "SCHEDULED",
+      live: true,
+      phase: "T6_GO_NO_GO",
+      goNoGo: "GO",
+      origin: "FLL",
+      destination: "NAS",
+      requestedById: adminId,
+      passengerNote: "Rescue organ trip — no patient name on this card",
+      purpose: "Dispatch of a rescue organ trip. Not an OPO or UNOS claim.",
+      timeCritical: true,
+      clockStartedAt: new Date(),
+      custodyNote: "Chain of custody open · FLL C15 → NAS. In-app only.",
+      temperatureNote: "Keep the cold-chain note on this card. In-app only.",
+      assignedPilotId: pilotId,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine:
+        "TIME-CRITICAL rescue organ trip · dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app.",
+    },
+  });
+
   const ivCount = await prisma.product.count({ where: { category: "IV" } });
   const supplyCount = await prisma.product.count({ where: { category: "SUPPLIES" } });
   const nonRxCount = await prisma.product.count({ where: { category: "NON_RX" } });
@@ -876,7 +989,7 @@ async function main() {
 
   const userCount = await prisma.user.count();
   console.log(
-    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + orders + payroll dates.`,
+    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + orders + payroll dates + MTG Airlines trips.`,
   );
 }
 

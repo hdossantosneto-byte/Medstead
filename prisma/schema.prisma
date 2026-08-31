@@ -16,6 +16,7 @@ enum Role {
   MEDSTEAD_ADMIN
   OPS
   FINANCE
+  PILOT
 }
 
 enum PriceMarket {
@@ -115,6 +116,22 @@ enum FlightPhase {
   POD
 }
 
+enum FlightTripType {
+  MEDICAL_CARGO
+  COMPANY_TRAVEL
+  PERSONAL_GOODS
+  DOCTOR_CHARTER
+  RESCUE_ORGAN
+}
+
+enum AirTripStatus {
+  REQUESTED
+  SCHEDULED
+  DISPATCHED
+  COMPLETE
+  HOLD
+}
+
 model User {
   id             String   @id @default(cuid())
   email          String   @unique
@@ -134,7 +151,9 @@ model User {
   payments       Payment[]
   statusChanges  StatusEvent[]
   gateSigns      ReleaseGate[]
-  expenses       ExpenseReport[]
+  expenses         ExpenseReport[]
+  requestedFlights Flight[] @relation("RequestedFlights")
+  assignedFlights  Flight[] @relation("AssignedPilot")
 }
 
 model Clinic {
@@ -304,18 +323,48 @@ model Shipment {
 }
 
 model Flight {
-  id            String         @id @default(cuid())
-  flightCode    String         @unique
+  id            String          @id @default(cuid())
+  flightCode    String          @unique
   corridor      FlightCorridor
-  live          Boolean        @default(true)
-  phase         FlightPhase    @default(T48_PREP)
+  tripType      FlightTripType  @default(MEDICAL_CARGO)
+  tripStatus    AirTripStatus   @default(SCHEDULED)
+  live          Boolean         @default(true)
+  phase         FlightPhase     @default(T48_PREP)
   goNoGo        String?
   origin        String
   destination   String
   dispatchedAt  DateTime?
   activityLine  String?
-  createdAt     DateTime       @default(now())
-  shipments     Shipment[]
+  requestedById String?
+  requestedBy   User?           @relation("RequestedFlights", fields: [requestedById], references: [id])
+  passengerNote    String?
+  purpose          String?
+  aircraftNote     String?
+  timeCritical     Boolean        @default(false)
+  clockStartedAt   DateTime?
+  custodyNote      String?
+  temperatureNote  String?
+  assignedPilotId  String?
+  assignedPilot    User?          @relation("AssignedPilot", fields: [assignedPilotId], references: [id])
+  pilotAdvisedAt   DateTime?
+  createdAt        DateTime       @default(now())
+  shipments        Shipment[]
+}
+
+/// Structure only. Never claim a live Part 135 certificate. No certificate number.
+model Part135Readiness {
+  id              String   @id @default("mtg-airlines")
+  operatorName    String   @default("MTG Airlines")
+  live            Boolean  @default(false)
+  certificateNote String
+  aircraftNote    String   @default("")
+  crewNote        String   @default("")
+  dutyRestNote    String   @default("")
+  opsSpecsNote    String   @default("")
+  maintenanceNote String   @default("")
+  onDemandCharter Boolean  @default(false)
+  cargoOps        Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
 }
 
 model ReleaseGate {
