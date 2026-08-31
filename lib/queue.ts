@@ -491,6 +491,16 @@ export async function loadQueue(user: {
         }
       }
     }
+
+    const first = ["dispatch_flight", "set_delivery_date", "freeze_manifest", "go_no_go"];
+    items.sort((a, b) => {
+      const ap = first.indexOf(a.kind);
+      const bp = first.indexOf(b.kind);
+      if (ap === -1 && bp === -1) return 0;
+      if (ap === -1) return 1;
+      if (bp === -1) return -1;
+      return ap - bp;
+    });
   }
 
   if (CLINIC_ROLES.includes(user.role)) {

@@ -19,7 +19,7 @@ export const CONTACT_ORDERS = "Orders@medsteadgroup.com";
 
 /** Finance books only. Do not print on the public site. */
 export const PAYING_ENTITY = "MEDSTEAD LLC";
-export const PAY_METHOD_ZELLE = "Zelle · Chase ••9696";
+export const PAY_METHOD_ZELLE = "Zelle · Chase ••9696 · MEDSTEAD LLC";
 export const ADP_BANNER = "ADP setup — not live. Pay is Zelle until ADP is live.";
 
 export const WAREHOUSE = {

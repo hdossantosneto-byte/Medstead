@@ -85,6 +85,17 @@ export default function DemoPage() {
         <strong>demo1234</strong>. Brand is MedStead only.
       </p>
       {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
+      <Card className="mt-6 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
+          Prove Del dispatch
+        </p>
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-navy-800/80">
+          <li>Enter as doctor — see CO-1008 (Bethel). Shop or open Your orders.</li>
+          <li>Enter as finance — mark paid only if an invoice is waiting.</li>
+          <li>Enter as Del — tap <strong>Dispatch flight</strong> on the FLL–NAS package. The doctor does not block cargo.</li>
+          <li>Enter as doctor again — CO-1008 is In Transit. No call to Del.</li>
+        </ol>
+      </Card>
       <div className="mt-8 grid gap-3">
         {ACCOUNTS.map((a) => (
           <Card key={a.email} className="flex items-center justify-between gap-4 p-4">
@@ -99,7 +110,7 @@ export default function DemoPage() {
               type="button"
               disabled={busy === a.email}
               onClick={() => enter(a.email)}
-              className="shrink-0 rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="min-h-tap shrink-0 rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               {busy === a.email ? "Entering…" : "Enter"}
             </button>

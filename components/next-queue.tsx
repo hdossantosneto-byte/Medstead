@@ -74,7 +74,7 @@ function QueueCard({ item }: { item: QueueItem }) {
         />
       )}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button onClick={go} disabled={busy || (item.needsDate && !date)}>
+        <Button onClick={go} disabled={busy || (item.needsDate && !date)} className="min-h-tap w-full sm:w-auto">
           {busy ? "Working…" : item.actionLabel}
         </Button>
         <a href={item.href} className="text-sm font-semibold text-teal-800 hover:underline">
@@ -115,6 +115,7 @@ export function DedicatedNextButton({
     <div>
       <Button
         disabled={busy}
+        className="min-h-tap w-full sm:w-auto"
         onClick={async () => {
           setBusy(true);
           setError("");
