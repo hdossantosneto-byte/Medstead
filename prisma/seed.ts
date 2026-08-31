@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { loadLegalIntlRows } from "./legal-catalog";
+import { CLINIC_DRIVES_SHIPMENT, publicClockOn } from "../lib/handoff";
 
 const prisma = new PrismaClient();
 const PASSWORD = "demo1234";
@@ -416,6 +417,7 @@ async function main() {
   });
 
   const pick = (list: typeof ivIntl, i: number) => list[i % list.length];
+  let shipSeq = 0;
 
   async function makeOrder(opts: {
     number: string;
@@ -427,6 +429,9 @@ async function main() {
     paid?: boolean;
     withManifest?: boolean;
     activityLine?: string;
+    shipmentStatus?: ShipmentStatus;
+    promisedDate?: Date;
+    gatesPending?: boolean;
   }) {
     const lines = opts.items.map((it) => {
       const tier =
@@ -450,6 +455,7 @@ async function main() {
         status: opts.status,
         notes: "Prices include delivery within 7 days to the clinic.",
         activityLine: opts.activityLine,
+        promisedDate: opts.promisedDate,
         items: { create: lines },
         events: {
           create: {
@@ -495,6 +501,40 @@ async function main() {
         },
       });
     }
+
+    const clinic = opts.clinicId === harbor.id ? harbor : opts.clinicId === bethel.id ? bethel : wellness360;
+    const dest = clinic.market === "USA" ? "FLL" : "NAS";
+    const shipStatus = opts.shipmentStatus ?? CLINIC_DRIVES_SHIPMENT[opts.status];
+    const paid = Boolean(opts.paid);
+    shipSeq += 1;
+    await prisma.shipment.create({
+      data: {
+        shipmentCode: `MS-20260828-FLL-${dest}-${String(shipSeq).padStart(4, "0")}`,
+        status: shipStatus,
+        service: "EXPRESS_AIR",
+        origin: "FLL",
+        destination: dest,
+        weightLb: 20,
+        pieces: lines.length,
+        clinicOrderId: order.id,
+        consignee: clinic.name,
+        publicClock: publicClockOn(shipStatus),
+        promisedDate: opts.promisedDate,
+        activityLine: opts.activityLine ?? "Linked at submit · public clock off until release.",
+        gates: {
+          create: GATES.map((name) => {
+            const pendingOps =
+              Boolean(opts.gatesPending) &&
+              (name === "PACKAGING_QUALITY" || name === "CARRIER_CAPACITY");
+            return {
+              name,
+              state: (pendingOps ? "PENDING" : name === "COMMERCIAL_FINANCE" && !paid ? "PENDING" : "GREEN") as GateState,
+              signedById: createdUsers["ops@medstead.demo"],
+            };
+          }),
+        },
+      },
+    });
 
     return { order, total };
   }
@@ -556,19 +596,35 @@ async function main() {
     paid: true,
   });
 
-  const shipped = await makeOrder({
+  await makeOrder({
     number: "CO-1003",
     clinicId: bethel.id,
     userId: createdUsers["doctor@medstead.demo"],
-    status: "IN_TRANSIT",
+    status: "PREPARING_SHIPMENT",
+    shipmentStatus: "ORIGIN_RECEIVED_HOLD",
+    gatesPending: true,
     items: [
       { product: intlIv2, qty: 2, market: "INTL" },
       { product: pick(ivIntl, 12), qty: 3, market: "INTL" },
     ],
     withInvoice: true,
     paid: true,
+    activityLine: "Origin received-hold · waiting on ops packaging / quality gate.",
+  });
+
+  await makeOrder({
+    number: "CO-1007",
+    clinicId: harbor.id,
+    userId: createdUsers["clinic.admin@medstead.demo"],
+    status: "SHIPPED",
+    promisedDate: new Date("2026-09-04"),
+    items: [
+      { product: usaIv, qty: 2, market: "USA" },
+    ],
+    withInvoice: true,
+    paid: true,
     withManifest: true,
-    activityLine: "Ops shipped · clinic can track without calling.",
+    activityLine: "Ops marked shipped · logistics is In Transit. Confirm in transit next.",
   });
 
   await makeOrder({
@@ -693,16 +749,6 @@ async function main() {
     gatesGreen: true,
     quoteId: q1.id,
     publicClock: true,
-  });
-
-  await seedShipment({
-    code: "MS-20260822-FLL-NAS-0002",
-    status: "ORIGIN_RECEIVED_HOLD",
-    service: "EXPRESS_AIR",
-    origin: "FLL",
-    dest: "NAS",
-    gatesGreen: false,
-    clinicOrderId: shipped.order.id,
   });
 
   await seedShipment({

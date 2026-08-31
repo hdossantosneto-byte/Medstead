@@ -67,7 +67,7 @@ export function StatusOverride({ orderId, current }: { orderId: string; current:
         ))}
       </select>
       <Button type="submit" disabled={busy}>
-        Override status
+        Override both machines
       </Button>
     </form>
   );
@@ -79,7 +79,9 @@ export function InvoiceButton({ orderId }: { orderId: string }) {
     <Button
       variant="secondary"
       onClick={async () => {
-        await generateInvoice(orderId);
+        const res = await generateInvoice(orderId);
+        if (res && "error" in res && res.error) return;
+        router.push("/app");
         router.refresh();
       }}
     >
@@ -94,7 +96,9 @@ export function PendingPayButton({ orderId }: { orderId: string }) {
     <Button
       variant="ghost"
       onClick={async () => {
-        await markPaymentPending(orderId);
+        const res = await markPaymentPending(orderId);
+        if (res && "error" in res && res.error) return;
+        router.push("/app");
         router.refresh();
       }}
     >
@@ -111,7 +115,11 @@ export function ManifestButton({ orderId }: { orderId: string }) {
       <Button
         onClick={async () => {
           const res = await generateManifest(orderId);
-          setMsg(res.error ?? "Manifest generated");
+          if (res.error) {
+            setMsg(res.error);
+            return;
+          }
+          router.push("/app");
           router.refresh();
         }}
       >
@@ -133,6 +141,7 @@ export function PaymentForm({ invoiceId, remaining }: { invoiceId: string; remai
       onSubmit={async (e) => {
         e.preventDefault();
         await recordPayment(invoiceId, amount, method, online);
+        router.push("/app");
         router.refresh();
       }}
     >

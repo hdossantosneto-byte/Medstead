@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function AdminIndex() {
-  redirect("/app/admin/crm");
+  redirect("/app");
 }

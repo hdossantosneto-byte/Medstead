@@ -11,6 +11,7 @@ import { prisma } from "./prisma";
 
 export type QueueKind =
   | "approve_clinic"
+  | "start_review"
   | "approve_order"
   | "crm_followup"
   | "crm_activate"
@@ -19,11 +20,14 @@ export type QueueKind =
   | "mark_paid"
   | "sign_finance_gate"
   | "prepare_shipment"
+  | "mark_origin_received"
   | "green_gate"
   | "generate_manifest"
   | "set_delivery_date"
   | "release_shipment"
   | "mark_shipped"
+  | "mark_in_transit"
+  | "mark_delivered"
   | "clinic_pay"
   | "open";
 
@@ -127,16 +131,29 @@ export async function loadQueue(user: {
     }
 
     for (const o of orders) {
-      items.push({
-        id: `ord-${o.id}`,
-        who: o.clinic.name,
-        what: `Review ${o.orderNumber}`,
-        why: `${CLINIC_ORDER_LABEL[o.status]} · waiting on Clint to approve so finance can invoice.`,
-        actionLabel: "Approve order",
-        kind: "approve_order",
-        href: `/app/admin/orders/${o.id}`,
-        orderId: o.id,
-      });
+      if (o.status === "SUBMITTED") {
+        items.push({
+          id: `rev-${o.id}`,
+          who: o.clinic.name,
+          what: `Start review of ${o.orderNumber}`,
+          why: "Submitted · moves clinic to Under Review and logistics to Compliance Review.",
+          actionLabel: "Start review",
+          kind: "start_review",
+          href: `/app/admin/orders/${o.id}`,
+          orderId: o.id,
+        });
+      } else {
+        items.push({
+          id: `ord-${o.id}`,
+          who: o.clinic.name,
+          what: `Approve ${o.orderNumber}`,
+          why: "Under Review · approve so finance can invoice. Logistics moves to Quoted.",
+          actionLabel: "Approve order",
+          kind: "approve_order",
+          href: `/app/admin/orders/${o.id}`,
+          orderId: o.id,
+        });
+      }
     }
   }
 
@@ -197,24 +214,24 @@ export async function loadQueue(user: {
       });
     }
     for (const g of gates) {
-      const paid = g.shipment.clinicOrder?.invoice?.status === "paid";
-      if (!paid) {
-        items.push({
-          id: `gate3-${g.id}`,
-          who: g.shipment.clinicOrder?.clinic.name ?? g.shipment.consignee,
-          what: "Sign commercial / finance gate",
-          why: "Gate 3 is blocked until finance signs payment / credit. Finance cannot ship.",
-          actionLabel: "Sign finance gate",
-          kind: "sign_finance_gate",
-          href: "/app/finance/invoices",
-          shipmentId: g.shipmentId,
-        });
+      if (g.shipment.clinicOrder && g.shipment.clinicOrder.invoice?.status !== "paid") {
+        continue;
       }
+      items.push({
+        id: `gate3-${g.id}`,
+        who: g.shipment.clinicOrder?.clinic.name ?? g.shipment.consignee,
+        what: "Sign commercial / finance gate",
+        why: "Payment is in · sign gate 3 so ops can release. Finance cannot ship.",
+        actionLabel: "Sign finance gate",
+        kind: "sign_finance_gate",
+        href: "/app/finance/invoices",
+        shipmentId: g.shipmentId,
+      });
     }
   }
 
   if (user.role === "OPS") {
-    const [needPrep, preparing, manifested, holds] = await Promise.all([
+    const [needPrep, preparing, manifested, moving, holds] = await Promise.all([
       prisma.clinicOrder.findMany({
         where: { status: "PAYMENT_RECEIVED" },
         include: { clinic: true, shipment: { include: { gates: true } } },
@@ -225,6 +242,10 @@ export async function loadQueue(user: {
       }),
       prisma.clinicOrder.findMany({
         where: { status: "MANIFEST_GENERATED" },
+        include: { clinic: true, shipment: true },
+      }),
+      prisma.clinicOrder.findMany({
+        where: { status: { in: ["SHIPPED", "IN_TRANSIT"] } },
         include: { clinic: true, shipment: true },
       }),
       prisma.shipment.findMany({
@@ -262,11 +283,24 @@ export async function loadQueue(user: {
         continue;
       }
       if (gatesGreen(shipment.gates) && !o.manifest) {
+        if (shipment.status === "AWAITING_SUPPLIER") {
+          items.push({
+            id: `origin-${shipment.id}`,
+            who: o.clinic.name,
+            what: `Mark origin received for ${o.orderNumber}`,
+            why: "Gates are green · move logistics to Origin Received-Hold, then manifest.",
+            actionLabel: "Mark origin received",
+            kind: "mark_origin_received",
+            href: "/app/ops/shipping",
+            shipmentId: shipment.id,
+          });
+          continue;
+        }
         items.push({
           id: `man-${o.id}`,
           who: o.clinic.name,
           what: `Generate manifest for ${o.orderNumber}`,
-          why: "All six gates green · waiting on ops. Finance cannot ship.",
+          why: "All six gates green · clinic becomes Manifest Generated, logistics Released/Manifested.",
           actionLabel: "Generate manifest",
           kind: "generate_manifest",
           href: `/docs/manifest/${o.id}`,
@@ -317,7 +351,34 @@ export async function loadQueue(user: {
       }
     }
 
+    for (const o of moving) {
+      if (o.status === "SHIPPED") {
+        items.push({
+          id: `transit-${o.id}`,
+          who: o.clinic.name,
+          what: `Confirm ${o.orderNumber} in transit`,
+          why: "Shipped · move clinic to In Transit. Logistics stays In Transit. Public clock is on.",
+          actionLabel: "Mark in transit",
+          kind: "mark_in_transit",
+          href: "/app/ops/shipping",
+          orderId: o.id,
+        });
+      } else {
+        items.push({
+          id: `dlv-${o.id}`,
+          who: o.clinic.name,
+          what: `Mark ${o.orderNumber} delivered`,
+          why: "In Transit · close both machines (Delivered / Delivered/Closed).",
+          actionLabel: "Mark delivered",
+          kind: "mark_delivered",
+          href: "/app/ops/shipping",
+          orderId: o.id,
+        });
+      }
+    }
+
     for (const s of holds) {
+      if (s.clinicOrder?.status === "PREPARING_SHIPMENT") continue;
       const who = s.clinicOrder?.clinic.name ?? s.consignee;
       if (gatesGreen(s.gates)) {
         items.push({

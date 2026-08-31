@@ -52,6 +52,8 @@ Visit `/demo` and click a role. Password for **every** seeded user is `demo1234`
 
 Each signed-in home (`/app`) is a **Do this next** queue: work waiting on that role, one card, one button. Completing a step writes an activity line on the record and creates the next role’s item. Empty state: “You're clear. Nothing is waiting on you.”
 
+Clinic 11-status and logistics 11-status stay in sync. Submitting a clinic order creates a linked shipment (public clock off). Next-action buttons move **both** machines: review → approve → invoice → pay → prepare → gates → origin hold → manifest → Del date → shipped → in transit → delivered. Do not WhatsApp — use the queue. Contact email is for exceptions only.
+
 Seeded examples:
 
 - **Admin (Clint):** 48h follow-up (Rolle), activate 360 Wellness, approve submitted order CO-1001.

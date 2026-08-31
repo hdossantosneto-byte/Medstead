@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
-import { ActivityLine } from "@/components/next-queue";
+import { ActivityLine, DedicatedNextButton } from "@/components/next-queue";
 import { Badge, Button, Card, PageHeader } from "@/components/ui";
-import { CLINIC_ORDER_LABEL, CLINIC_ORDER_STATUSES } from "@/lib/constants";
+import { CLINIC_ORDER_LABEL, CLINIC_ORDER_STATUSES, SHIPMENT_LABEL } from "@/lib/constants";
 import { money, when } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { clinicApproved, requireUser } from "@/lib/session";
@@ -12,7 +12,7 @@ export default async function ClinicOrderDetail({ params }: { params: { id: stri
 
   const order = await prisma.clinicOrder.findUnique({
     where: { id: params.id },
-    include: { items: { include: { product: true } }, invoice: true, manifest: true, events: true },
+    include: { items: { include: { product: true } }, invoice: true, manifest: true, events: true, shipment: true },
   });
   if (!order || order.clinicId !== user.clinic.id) notFound();
   const total = order.items.reduce((s, i) => s + i.unitPrice * i.qty, 0);
@@ -71,10 +71,19 @@ export default async function ClinicOrderDetail({ params }: { params: { id: stri
           {order.manifest && (
             <p className="mt-2 text-sm">Manifest {order.manifest.number}</p>
           )}
+          {order.shipment && (
+            <p className="mt-2 text-sm">
+              Logistics {order.shipment.shipmentCode}: {SHIPMENT_LABEL[order.shipment.status]}
+              {order.shipment.publicClock ? " · public clock on" : " · public clock off"}
+            </p>
+          )}
           {order.promisedDate && (
             <p className="mt-2 text-sm">Delivery date (set by Del): {when(order.promisedDate)}</p>
           )}
           <div className="mt-4 flex flex-col gap-2">
+            {order.status === "PAYMENT_PENDING" && order.invoice && order.invoice.status !== "paid" && (
+              <DedicatedNextButton kind="clinic_pay" invoiceId={order.invoice.id} label="Pay invoice" />
+            )}
             {order.invoice && (
               <Button href={`/docs/commercial-invoice/${order.id}`} variant="ghost">
                 Commercial invoice

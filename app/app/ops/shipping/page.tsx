@@ -1,15 +1,16 @@
 import Link from "next/link";
+import { RoleInbox } from "@/components/role-inbox";
 import { ActivityLine } from "@/components/next-queue";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { GateToggle, ShipmentStatusForm } from "@/components/admin-forms";
-import { SERVICE_LABEL, SHIPMENT_LABEL } from "@/lib/constants";
+import { CLINIC_ORDER_LABEL, SERVICE_LABEL, SHIPMENT_LABEL } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 
 export default async function OpsShippingPage() {
   await requireRole(["OPS", "MEDSTEAD_ADMIN"]);
   const shipments = await prisma.shipment.findMany({
-    include: { gates: true },
+    include: { gates: true, clinicOrder: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -18,8 +19,9 @@ export default async function OpsShippingPage() {
       <PageHeader
         eyebrow="Ops"
         title="Shipping"
-        lede="Logistics statuses are separate from clinic order statuses. All six gates must be green before Released/Manifested. Public clock starts after release."
+        lede="Do this next is the inbox. Marking Released/Manifested or Shipped moves the clinic order with it. Public clock starts after release. No invoice totals."
       />
+      <RoleInbox />
       <div className="space-y-4">
         {shipments.map((s) => {
           const green = s.gates.filter((g) => g.state === "GREEN").length;
@@ -34,11 +36,19 @@ export default async function OpsShippingPage() {
                     {s.origin} → {s.destination} · {SERVICE_LABEL[s.service]} · {s.consignee}
                   </p>
                 </div>
-                <Badge>{SHIPMENT_LABEL[s.status]}</Badge>
+                <div className="flex flex-wrap gap-2">
+                  <Badge>{SHIPMENT_LABEL[s.status]}</Badge>
+                  {s.clinicOrder && (
+                    <Badge tone="teal">
+                      {s.clinicOrder.orderNumber} · {CLINIC_ORDER_LABEL[s.clinicOrder.status]}
+                    </Badge>
+                  )}
+                </div>
               </div>
               <p className="mt-2 text-xs text-navy-800/50">
                 Gates {green}/6 green · {s.weightLb} lb · {s.pieces} pcs
                 {s.promisedDate ? " · date set by Del" : ""}
+                {s.publicClock ? " · public clock on" : " · public clock off"}
               </p>
               <div className="mt-3">
                 <ActivityLine text={s.activityLine} />

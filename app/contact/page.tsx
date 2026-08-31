@@ -1,6 +1,6 @@
 import { Footer } from "@/components/footer";
 import { PublicNav } from "@/components/public-nav";
-import { Card, PageHeader } from "@/components/ui";
+import { Button, Card, PageHeader } from "@/components/ui";
 import { CONTACT_ORDERS, HUBS, WAREHOUSE } from "@/lib/constants";
 
 export const metadata = { title: "Contact" };
@@ -13,17 +13,31 @@ export default function ContactPage() {
         <PageHeader
           eyebrow="Orders desk"
           title="Contact MedStead"
-          lede="Clinic orders, freight, and manifests go through a single operations desk. We serve USA and international clinics — not a Bahamas-only service."
+          lede="Do not WhatsApp Clint, Del, ops, or finance. Work waiting on you is on Do this next. Email is only for exceptions."
         />
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
-              Email
+              In-app inbox
             </p>
-            <a href={`mailto:${CONTACT_ORDERS}`} className="mt-2 block text-2xl text-navy-900">
+            <p className="mt-3 text-sm leading-6 text-navy-800/70">
+              Sign in. The home screen is one queue: who it is, why it is waiting, one button.
+              Completing it hands the record to the next role. Clinic orders and logistics
+              shipments move together.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button href="/app">Do this next</Button>
+              <Button href="/demo" variant="ghost">
+                Demo roles
+              </Button>
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
+              Exception desk
+            </p>
+            <a href={`mailto:${CONTACT_ORDERS}`} className="mt-2 block text-lg text-navy-900">
               {CONTACT_ORDERS}
             </a>
-            <p className="mt-4 text-sm leading-6 text-navy-800/70">{WAREHOUSE.line}</p>
+            <p className="mt-2 text-sm leading-6 text-navy-800/70">{WAREHOUSE.line}</p>
           </Card>
           <Card className="p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">

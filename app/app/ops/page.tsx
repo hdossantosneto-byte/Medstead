@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function OpsIndex() {
-  redirect("/app/ops/shipping");
+  redirect("/app");
 }

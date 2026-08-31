@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { runNextAction } from "@/lib/actions";
-import type { QueueItem } from "@/lib/queue";
+import type { QueueItem, QueueKind } from "@/lib/queue";
 import { Button, Card, inputClass } from "@/components/ui";
 
 export function NextQueue({ items }: { items: QueueItem[] }) {
@@ -55,6 +55,7 @@ function QueueCard({ item }: { item: QueueItem }) {
       setError(res.error);
       return;
     }
+    router.push("/app");
     router.refresh();
   }
 
@@ -81,6 +82,58 @@ function QueueCard({ item }: { item: QueueItem }) {
       </div>
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
     </Card>
+  );
+}
+
+export function DedicatedNextButton({
+  kind,
+  label,
+  orderId,
+  invoiceId,
+  shipmentId,
+  clinicId,
+  crmId,
+}: {
+  kind: QueueKind;
+  label: string;
+  orderId?: string;
+  invoiceId?: string;
+  shipmentId?: string;
+  clinicId?: string;
+  crmId?: string;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  return (
+    <div>
+      <Button
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError("");
+          const res = await runNextAction({
+            kind,
+            orderId,
+            invoiceId,
+            shipmentId,
+            clinicId,
+            crmId,
+          });
+          setBusy(false);
+          if (res && "error" in res && res.error) {
+            setError(res.error);
+            return;
+          }
+          router.push("/app");
+          router.refresh();
+        }}
+      >
+        {busy ? "Working…" : label}
+      </Button>
+      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+    </div>
   );
 }
 
