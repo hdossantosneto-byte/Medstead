@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-sand text-ink antialiased;
+}
+
+::selection {
+  background: #c8e6c9;
+  color: #002147;
+}
+
+.wordmark {
+  letter-spacing: -0.03em;
+}
+
+.print-sheet {
+  background: white;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}

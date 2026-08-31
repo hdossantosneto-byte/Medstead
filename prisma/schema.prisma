@@ -1,0 +1,608 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PUBLIC
+  CUSTOMER
+  CLINIC_ADMIN
+  DOCTOR
+  PHARMACY
+  MEDSTEAD_ADMIN
+  OPS
+  FINANCE
+  PILOT
+  SALES
+}
+
+enum PriceMarket {
+  USA
+  INTL
+}
+
+enum ProductCategory {
+  RX
+  NON_RX
+  IV
+  SUPPLIES
+}
+
+enum ClinicOrderStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  INVOICE_GENERATED
+  PAYMENT_PENDING
+  PAYMENT_RECEIVED
+  PREPARING_SHIPMENT
+  MANIFEST_GENERATED
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+}
+
+enum ShipmentStatus {
+  SUBMITTED
+  COMPLIANCE_REVIEW
+  QUOTED
+  APPROVED_PAID
+  AWAITING_SUPPLIER
+  ORIGIN_RECEIVED_HOLD
+  RELEASED_MANIFESTED
+  IN_TRANSIT
+  CUSTOMS_HOLD_RELEASED
+  DESTINATION_RECEIVED
+  DELIVERED_CLOSED
+}
+
+enum FreightService {
+  EXPRESS_AIR
+  STANDARD_SEA
+}
+
+enum CrmStage {
+  TARGETED
+  CONTACTED
+  DISCOVERY
+  QUALIFIED
+  FORUM_CONSULT
+  ELIGIBILITY_REVIEW
+  ACTIVATED
+  FIRST_SERVICE
+  REPEAT
+  STRATEGIC
+  HOLD
+  LOST
+}
+
+enum GateName {
+  CUSTOMER_CONSIGNEE
+  PRODUCT_SOURCE
+  COMMERCIAL_FINANCE
+  EXPORT_IMPORT
+  PACKAGING_QUALITY
+  CARRIER_CAPACITY
+}
+
+enum GateState {
+  PENDING
+  GREEN
+  RED
+}
+
+enum PriceLabel {
+  SOURCED
+  DEMO
+}
+
+enum FlightCorridor {
+  FLL_NAS
+  FLL_FPO
+  FLL_MSY
+}
+
+enum FlightPhase {
+  T48_PREP
+  T24_FREEZE
+  T6_GO_NO_GO
+  TENDER
+  DEPARTED
+  ARRIVED
+  CUSTOMS
+  POD
+}
+
+enum FlightTripType {
+  MEDICAL_CARGO
+  COMPANY_TRAVEL
+  PERSONAL_GOODS
+  DOCTOR_CHARTER
+  RESCUE_ORGAN
+}
+
+enum AirTripStatus {
+  REQUESTED
+  SCHEDULED
+  DISPATCHED
+  COMPLETE
+  HOLD
+}
+
+enum SalesKind {
+  CLINIC
+  DOCTOR
+  WAREHOUSE
+  CHARTER
+}
+
+enum SalesStage {
+  PROSPECT
+  TALKING
+  EVENT_SET
+  BOOKED
+  ACTIVE
+}
+
+enum SalesEventKind {
+  DINNER
+  SITE_VISIT
+  WAREHOUSE_TOUR
+  CONFERENCE
+  DOCTOR_CHARTER_DAY
+}
+
+enum SalesEventStatus {
+  PLANNED
+  BOOKED
+  DONE
+  CANCELED
+}
+
+enum CallType {
+  ORGAN_RESCUE
+  MEDICAL_CARGO
+  DOCTOR_CHARTER
+  OTHER_URGENT_MEDICAL
+}
+
+enum CallUrgency {
+  ROUTINE
+  URGENT
+  ORGAN_CLOCK
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           Role
+  active         Boolean  @default(true)
+  clinicId       String?
+  clinic         Clinic?  @relation(fields: [clinicId], references: [id])
+  rewardsPoints  Int      @default(0)
+  warehouseCode  String?
+  phone          String?
+  createdAt      DateTime @default(now())
+  orders         ClinicOrder[]
+  quotes         FreightQuote[]
+  shipments      Shipment[]     @relation("CustomerShipments")
+  payments       Payment[]
+  statusChanges  StatusEvent[]
+  gateSigns      ReleaseGate[]
+  expenses         ExpenseReport[]
+  requestedFlights Flight[] @relation("RequestedFlights")
+  assignedFlights  Flight[] @relation("AssignedPilot")
+  salesOwned       SalesAccount[] @relation("SalesOwner")
+  salesCustomerOf  SalesAccount[] @relation("SalesCustomer")
+  salesEvents      SalesEvent[]   @relation("SalesEventOwner")
+}
+
+model Clinic {
+  id           String      @id @default(cuid())
+  name         String
+  country      String
+  city         String
+  market       PriceMarket
+  type         String
+  approved     Boolean     @default(false)
+  address      String
+  contactEmail String
+  licenseNote  String?
+  activityLine String?
+  createdAt    DateTime    @default(now())
+  users        User[]
+  orders       ClinicOrder[]
+  crm          CrmAccount?
+  salesAccounts SalesAccount[]
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  sku         String          @unique
+  name        String
+  strength    String?
+  form        String?
+  category    ProductCategory
+  description String?
+  prices      PriceTier[]
+  items       ClinicOrderItem[]
+  inventory   InventoryItem?
+}
+
+model PriceTier {
+  id        String      @id @default(cuid())
+  productId String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  market    PriceMarket
+  minQty    Int
+  maxQty    Int
+  unitPrice Float
+  label     PriceLabel  @default(DEMO)
+}
+
+model InventoryItem {
+  id        String  @id @default(cuid())
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  onHand    Int     @default(0)
+  reserved  Int     @default(0)
+  location  String  @default("FLL-C15")
+}
+
+model ClinicOrder {
+  id          String            @id @default(cuid())
+  orderNumber String            @unique
+  clinicId    String
+  clinic      Clinic            @relation(fields: [clinicId], references: [id])
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  status      ClinicOrderStatus @default(SUBMITTED)
+  notes       String?
+  activityLine String?
+  promisedDate DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       ClinicOrderItem[]
+  invoice     Invoice?
+  manifest    Manifest?
+  events      StatusEvent[]
+  shipment    Shipment?
+}
+
+model ClinicOrderItem {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     ClinicOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product     @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Float
+  priceLabel PriceLabel @default(DEMO)
+}
+
+model Invoice {
+  id            String      @id @default(cuid())
+  number        String      @unique
+  orderId       String      @unique
+  order         ClinicOrder @relation(fields: [orderId], references: [id])
+  amount        Float
+  paidAmount    Float       @default(0)
+  status        String      @default("open")
+  issuedAt      DateTime    @default(now())
+  dueAt         DateTime?
+  payments      Payment[]
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  amount    Float
+  method    String
+  online    Boolean  @default(false)
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Manifest {
+  id          String      @id @default(cuid())
+  number      String      @unique
+  orderId     String      @unique
+  order       ClinicOrder @relation(fields: [orderId], references: [id])
+  origin      String
+  destination String
+  createdAt   DateTime    @default(now())
+}
+
+model FreightQuote {
+  id          String         @id @default(cuid())
+  quoteNumber String         @unique
+  userId      String?
+  user        User?          @relation(fields: [userId], references: [id])
+  origin      String
+  destination String
+  service     FreightService
+  weightLb    Float
+  pieces      Int            @default(1)
+  listAmount  Float
+  onlineAmount Float
+  description String?
+  retailerUrl String?
+  status      String         @default("UNDER_REVIEW")
+  createdAt   DateTime       @default(now())
+  shipment    Shipment?
+}
+
+model Shipment {
+  id            String         @id @default(cuid())
+  shipmentCode  String         @unique
+  status        ShipmentStatus @default(SUBMITTED)
+  service       FreightService
+  origin        String
+  destination   String
+  weightLb      Float
+  pieces        Int            @default(1)
+  customerId    String?
+  customer      User?          @relation("CustomerShipments", fields: [customerId], references: [id])
+  quoteId       String?        @unique
+  quote         FreightQuote?  @relation(fields: [quoteId], references: [id])
+  clinicOrderId String?        @unique
+  clinicOrder   ClinicOrder?   @relation(fields: [clinicOrderId], references: [id])
+  consignee     String
+  description   String?
+  retailerUrl   String?
+  publicClock   Boolean        @default(false)
+  activityLine  String?
+  promisedDate  DateTime?
+  flightId      String?
+  flight        Flight?        @relation(fields: [flightId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  gates         ReleaseGate[]
+  events        StatusEvent[]
+}
+
+model Flight {
+  id            String          @id @default(cuid())
+  flightCode    String          @unique
+  corridor      FlightCorridor
+  tripType      FlightTripType  @default(MEDICAL_CARGO)
+  tripStatus    AirTripStatus   @default(SCHEDULED)
+  live          Boolean         @default(true)
+  phase         FlightPhase     @default(T48_PREP)
+  goNoGo        String?
+  origin        String
+  destination   String
+  dispatchedAt  DateTime?
+  activityLine  String?
+  requestedById String?
+  requestedBy   User?           @relation("RequestedFlights", fields: [requestedById], references: [id])
+  passengerNote    String?
+  purpose          String?
+  aircraftNote     String?
+  timeCritical     Boolean        @default(false)
+  clockStartedAt   DateTime?
+  custodyNote      String?
+  temperatureNote  String?
+  assignedPilotId  String?
+  assignedPilot    User?          @relation("AssignedPilot", fields: [assignedPilotId], references: [id])
+  pilotAdvisedAt   DateTime?
+  aircraftId       String?
+  aircraft         Aircraft?      @relation(fields: [aircraftId], references: [id])
+  createdAt        DateTime       @default(now())
+  shipments        Shipment[]
+  salesEvents      SalesEvent[]
+  callLogs         CallLog[]
+}
+
+enum AircraftStatus {
+  CURRENT
+  MX
+  DOWN
+}
+
+/// Operating fleet from Bolt Aircraft. Do not invent extra tails.
+model Aircraft {
+  id         String         @id @default(cuid())
+  tailNumber String?        @unique
+  type       String?
+  name       String
+  homeBase   String         @default("FLL")
+  status     AircraftStatus @default(CURRENT)
+  corridors  String         @default("FLL_NAS,FLL_FPO")
+  createdAt  DateTime       @default(now())
+  flights    Flight[]
+}
+
+/// Structure only. Never claim a live Part 135 certificate. No certificate number.
+model Part135Readiness {
+  id              String   @id @default("mtg-airlines")
+  operatorName    String   @default("MTG Airlines")
+  live            Boolean  @default(false)
+  certificateNote String
+  aircraftNote    String   @default("")
+  crewNote        String   @default("")
+  dutyRestNote    String   @default("")
+  opsSpecsNote    String   @default("")
+  maintenanceNote String   @default("")
+  onDemandCharter Boolean  @default(false)
+  cargoOps        Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model ReleaseGate {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  name        GateName
+  state       GateState @default(PENDING)
+  note        String?
+  signedById  String?
+  signedBy    User?    @relation(fields: [signedById], references: [id])
+  updatedAt   DateTime @updatedAt
+}
+
+model StatusEvent {
+  id            String   @id @default(cuid())
+  clinicOrderId String?
+  clinicOrder   ClinicOrder? @relation(fields: [clinicOrderId], references: [id], onDelete: Cascade)
+  shipmentId    String?
+  shipment      Shipment?    @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  fromStatus    String?
+  toStatus      String
+  note          String?
+  actorId       String?
+  actor         User?    @relation(fields: [actorId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model CrmAccount {
+  id         String    @id @default(cuid())
+  name       String
+  kind       String
+  market     String
+  country    String
+  stage      CrmStage  @default(TARGETED)
+  holdReason String?
+  ownerNote  String?
+  activityLine String?
+  followUpAt DateTime?
+  clinicId   String?   @unique
+  clinic     Clinic?   @relation(fields: [clinicId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ShipmentSequence {
+  id    String @id @default("global")
+  lastN Int    @default(0)
+}
+
+/// Team expense filing. Not a bank, not a payroll run, no balances.
+model ExpenseReport {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  title      String
+  amount     Float
+  currency   String   @default("USD")
+  incurredAt DateTime
+  note       String?
+  status     String   @default("SUBMITTED")
+  createdAt  DateTime @default(now())
+}
+
+/// Phone intake from Call Center. No patient name, DOB, or MRN.
+model CallLog {
+  id            String      @id @default(cuid())
+  receivedAt    DateTime    @default(now())
+  callerName    String
+  callerPhone   String
+  callbackPhone String?
+  callerOrg     String?
+  callType      CallType
+  origin        String?
+  destination   String
+  notes         String?
+  urgency       CallUrgency
+  source        String      @default("+1-954-228-4551")
+  routedTo      String      @default("DEL")
+  flightId      String?
+  flight        Flight?     @relation(fields: [flightId], references: [id])
+}
+
+/// Sales desk. Not the admin clinic-approval CRM. No revenue totals.
+model SalesAccount {
+  id             String      @id @default(cuid())
+  name           String
+  kind           SalesKind
+  stage          SalesStage  @default(PROSPECT)
+  market         String
+  country        String
+  ownerId        String
+  owner          User        @relation("SalesOwner", fields: [ownerId], references: [id])
+  clinicId       String?
+  clinic         Clinic?     @relation(fields: [clinicId], references: [id])
+  customerId     String?
+  customer       User?       @relation("SalesCustomer", fields: [customerId], references: [id])
+  activityLine   String?
+  lastTouchAt    DateTime?
+  nextFollowUpAt DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  followUps      SalesFollowUp[]
+  events         SalesEvent[]
+  activities     SalesActivity[]
+}
+
+model SalesFollowUp {
+  id        String        @id @default(cuid())
+  accountId String
+  account   SalesAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  dueAt     DateTime
+  kind      String
+  note      String?
+  doneAt    DateTime?
+  createdAt DateTime      @default(now())
+}
+
+model SalesEvent {
+  id           String            @id @default(cuid())
+  accountId    String
+  account      SalesAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  ownerId      String?
+  owner        User?             @relation("SalesEventOwner", fields: [ownerId], references: [id])
+  kind         SalesEventKind
+  title        String
+  occursAt     DateTime
+  status       SalesEventStatus  @default(PLANNED)
+  handedTo     String?
+  flightId     String?
+  flight       Flight?           @relation(fields: [flightId], references: [id])
+  activityLine String?
+  createdAt    DateTime          @default(now())
+}
+
+model SalesActivity {
+  id        String       @id @default(cuid())
+  accountId String
+  account   SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String
+  body      String?
+  href      String?
+  at        DateTime     @default(now())
+}
+
+/// Payee is not an employee. No employment type, W-2, or 1099.
+model Payee {
+  id          String          @id @default(cuid())
+  displayName String
+  roleLabel   String?
+  pays        ScheduledPay[]
+}
+
+/// Pay dates to track. Does not move money.
+model ScheduledPay {
+  id           String   @id @default(cuid())
+  payeeId      String
+  payee        Payee    @relation(fields: [payeeId], references: [id], onDelete: Cascade)
+  payingEntity String
+  amount       Float
+  currency     String   @default("USD")
+  dueAt        DateTime
+  method       String
+  status       String   @default("SCHEDULED")
+  recurring    Boolean  @default(false)
+  invoiceNumber String?
+  note         String?
+  createdAt    DateTime @default(now())
+}
