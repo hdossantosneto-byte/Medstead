@@ -869,6 +869,88 @@ export async function acknowledgePilotBrief(flightId: string) {
   return { ok: true };
 }
 
+export async function ingestCall(input: {
+  callerName: string;
+  callerPhone: string;
+  callerOrg?: string;
+  callType: "ORGAN_RESCUE" | "MEDICAL_CARGO" | "DOCTOR_CHARTER" | "OTHER_URGENT_MEDICAL";
+  origin?: string;
+  destination: string;
+  notes?: string;
+  urgency: "ROUTINE" | "URGENT" | "ORGAN_CLOCK";
+  source?: string;
+}) {
+  const actor = await requireRole(["MEDSTEAD_ADMIN", "OPS", "SALES"]);
+  const callerName = input.callerName.trim();
+  const callerPhone = input.callerPhone.trim();
+  const dest = input.destination.trim().toUpperCase();
+  const types = ["ORGAN_RESCUE", "MEDICAL_CARGO", "DOCTOR_CHARTER", "OTHER_URGENT_MEDICAL"] as const;
+  const urgencies = ["ROUTINE", "URGENT", "ORGAN_CLOCK"] as const;
+  if (!types.includes(input.callType)) return { error: "Unknown call type." };
+  if (!urgencies.includes(input.urgency)) return { error: "Unknown urgency." };
+  if (!callerName || !callerPhone) return { error: "Caller name and phone are required. No patient identifiers." };
+  if (!dest) return { error: "Destination is required." };
+  const corridor = corridorForDest(dest);
+  if (!corridor) return { error: "Pick NAS, FPO, or MSY. Mexico / MSY stay labeled not live." };
+  const live = corridor === "FLL_NAS" || corridor === "FLL_FPO";
+  const origin = (input.origin || "FLL").trim().toUpperCase();
+  const org = input.callerOrg?.trim() || "Phone intake";
+  const notes = input.notes?.trim() || "";
+  const rescue = input.callType === "ORGAN_RESCUE";
+  const tripType: FlightTripType =
+    rescue
+      ? "RESCUE_ORGAN"
+      : input.callType === "DOCTOR_CHARTER"
+        ? "DOCTOR_CHARTER"
+        : "MEDICAL_CARGO";
+  const phoneLine = `Phone intake · ${org} · ${callerPhone} · routed to Del. Do not re-type. No patient name.`;
+
+  const flight = await prisma.flight.create({
+    data: {
+      flightCode: await nextFlightCode(corridor, tripType),
+      corridor,
+      tripType,
+      tripStatus: rescue || tripType === "MEDICAL_CARGO" ? "SCHEDULED" : "REQUESTED",
+      live,
+      phase: rescue ? "T6_GO_NO_GO" : tripType === "MEDICAL_CARGO" ? "T6_GO_NO_GO" : "T48_PREP",
+      goNoGo: rescue || tripType === "MEDICAL_CARGO" ? "GO" : null,
+      origin,
+      destination: dest,
+      requestedById: actor.id,
+      passengerNote: `${org} · phone origin. No patient name.`,
+      purpose: notes || `${tripType.replaceAll("_", " ")} from call center.`,
+      timeCritical: rescue,
+      clockStartedAt: rescue ? new Date() : null,
+      custodyNote: rescue ? "Chain of custody open · phone intake · in-app only." : null,
+      temperatureNote: rescue ? "Temperature note from the call. No patient identifiers." : null,
+      assignedPilotId: (await defaultPilotId()) ?? undefined,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine: rescue
+        ? `TIME-CRITICAL ${phoneLine}`
+        : phoneLine,
+    },
+  });
+
+  const call = await prisma.callLog.create({
+    data: {
+      callerName,
+      callerPhone,
+      callerOrg: input.callerOrg?.trim() || null,
+      callType: input.callType,
+      origin,
+      destination: dest,
+      notes: notes || null,
+      urgency: input.urgency,
+      source: input.source?.trim() || "call_center",
+      routedTo: "DEL",
+      flightId: flight.id,
+    },
+  });
+
+  revalidateApp();
+  return { ok: true, callId: call.id, flightCode: flight.flightCode, flightId: flight.id };
+}
+
 async function writeSalesActivity(
   accountId: string,
   kind: string,

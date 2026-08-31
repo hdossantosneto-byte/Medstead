@@ -82,6 +82,7 @@ async function main() {
   await prisma.manifest.deleteMany();
   await prisma.clinicOrderItem.deleteMany();
   await prisma.shipment.deleteMany();
+  await prisma.callLog.deleteMany();
   await prisma.flight.deleteMany();
   await prisma.freightQuote.deleteMany();
   await prisma.clinicOrder.deleteMany();
@@ -907,7 +908,61 @@ async function main() {
       assignedPilotId: pilotId,
       aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
       activityLine:
-        "TIME-CRITICAL rescue organ trip · dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app.",
+        "TIME-CRITICAL rescue organ trip · Phone intake · Nassau Transfer Desk · routed to Del. Do not re-type. No patient name. Not an OPO or UNOS claim.",
+    },
+  });
+
+  const rescueFlight = await prisma.flight.findUnique({ where: { flightCode: "MTG-A-RSC-004" } });
+  if (rescueFlight) {
+    await prisma.callLog.create({
+      data: {
+        callerName: "Nassau Transfer Desk",
+        callerPhone: "+1 242 555 0140",
+        callerOrg: "Nassau Transfer Desk",
+        callType: "ORGAN_RESCUE",
+        origin: "FLL",
+        destination: "NAS",
+        notes: "Dispatch of a rescue organ trip. Clock on. No patient identifiers.",
+        urgency: "ORGAN_CLOCK",
+        source: "call_center",
+        routedTo: "DEL",
+        flightId: rescueFlight.id,
+      },
+    });
+  }
+
+  const phoneCargo = await prisma.flight.create({
+    data: {
+      flightCode: "FL-FLL-NAS-005",
+      corridor: "FLL_NAS",
+      tripType: "MEDICAL_CARGO",
+      tripStatus: "SCHEDULED",
+      live: true,
+      phase: "T6_GO_NO_GO",
+      goNoGo: "GO",
+      origin: "FLL",
+      destination: "NAS",
+      requestedById: adminId,
+      passengerNote: "Phone intake · Freeport Clinic Hub. No patient name.",
+      purpose: "Medical cargo from the call center. Del dispatches. Doctor does not block cargo.",
+      assignedPilotId: pilotId,
+      aircraftNote: "TBD — Hairson fills aircraft later. NOT LIVE / FUTURE 135.",
+      activityLine: "Phone intake · Freeport Clinic Hub · +1 242 555 0188 · routed to Del. Do not re-type.",
+    },
+  });
+  await prisma.callLog.create({
+    data: {
+      callerName: "Freeport Clinic Hub",
+      callerPhone: "+1 242 555 0188",
+      callerOrg: "Freeport Clinic Hub",
+      callType: "MEDICAL_CARGO",
+      origin: "FLL",
+      destination: "NAS",
+      notes: "Carton waiting at FLL. No patient identifiers.",
+      urgency: "URGENT",
+      source: "call_center",
+      routedTo: "DEL",
+      flightId: phoneCargo.id,
     },
   });
 

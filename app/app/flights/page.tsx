@@ -49,6 +49,7 @@ export default async function FlightsPage() {
         shipments: { include: { clinicOrder: { include: { clinic: true } } } },
         requestedBy: true,
         assignedPilot: true,
+        callLogs: true,
       },
       orderBy: [{ timeCritical: "desc" }, { createdAt: "desc" }],
     }),
@@ -219,6 +220,7 @@ export default async function FlightsPage() {
                     {f.goNoGo && <Badge tone={f.goNoGo === "GO" ? "green" : "red"}>{f.goNoGo}</Badge>}
                     {!f.live && <Badge tone="amber">Not live</Badge>}
                     {f.pilotAdvisedAt && <Badge tone="green">Pilot advised</Badge>}
+                    {f.callLogs.length > 0 && <Badge tone="amber">Phone intake</Badge>}
                   </div>
                   {clock && (
                     <p className="mt-3 font-display text-3xl text-red-700">{clock}</p>
@@ -234,6 +236,11 @@ export default async function FlightsPage() {
                     <p className="mt-1 text-sm text-navy-800/80">Temperature: {f.temperatureNote}</p>
                   )}
                   {f.activityLine && <p className="mt-3 text-sm text-navy-800/70">{f.activityLine}</p>}
+                  {f.callLogs[0] && (
+                    <p className="mt-2 text-sm text-navy-800/70">
+                      Phone · {f.callLogs[0].callerOrg || f.callLogs[0].callerName} · {f.callLogs[0].callerPhone}
+                    </p>
+                  )}
                   {f.requestedBy && (
                     <p className="mt-2 text-xs text-navy-800/50">Opened by {f.requestedBy.name}</p>
                   )}

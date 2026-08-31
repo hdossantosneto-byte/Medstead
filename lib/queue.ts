@@ -535,31 +535,43 @@ export async function loadQueue(user: {
         tripStatus: { in: ["REQUESTED", "SCHEDULED", "DISPATCHED"] },
         phase: { not: "POD" },
       },
-      include: { requestedBy: true },
+      include: { requestedBy: true, callLogs: true },
       orderBy: { createdAt: "desc" },
     });
     for (const f of airTrips) {
-      const who = f.requestedBy?.name ?? f.passengerNote ?? AIR_ARM;
+      const who = f.callLogs[0]?.callerOrg ?? f.requestedBy?.name ?? f.passengerNote ?? AIR_ARM;
       const rescue = f.tripType === "RESCUE_ORGAN";
+      const phone = f.callLogs.length > 0;
       if (f.tripType !== "MEDICAL_CARGO" && f.tripStatus === "REQUESTED") {
         items.push({
           id: `sch-${f.id}`,
           who,
           what: `Schedule ${TRIP_TYPE_LABEL[f.tripType]} ${f.flightCode}`,
-          why: f.activityLine || "Del owns the air arm. Finance cannot fly. No WhatsApp.",
+          why: phone
+            ? "Phone intake · do not re-type. Schedule on the air board."
+            : f.activityLine || "Del owns the air arm. Finance cannot fly. No WhatsApp.",
           actionLabel: "Schedule trip",
           kind: "schedule_charter",
           href: "/app/flights",
           flightId: f.id,
         });
-      } else if (f.tripType !== "MEDICAL_CARGO" && f.tripStatus === "SCHEDULED" && f.live && f.corridor !== "FLL_MSY") {
+      } else if (
+        f.tripStatus === "SCHEDULED" &&
+        f.live &&
+        f.corridor !== "FLL_MSY" &&
+        (f.tripType !== "MEDICAL_CARGO" || phone)
+      ) {
         items.push({
           id: `airdisp-${f.id}`,
           who,
           what: rescue ? `Dispatch TIME-CRITICAL ${f.flightCode}` : `Dispatch ${f.flightCode}`,
           why: rescue
-            ? "Dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app."
-            : `${TRIP_TYPE_LABEL[f.tripType]} · doctors do not block the air arm.`,
+            ? phone
+              ? "Phone intake · TIME-CRITICAL rescue organ trip. Not an OPO or UNOS claim."
+              : "Dispatch of a rescue organ trip. Not an OPO or UNOS claim. Notify pilots in-app."
+            : phone
+              ? `Phone intake · ${TRIP_TYPE_LABEL[f.tripType]}. Do not re-type.`
+              : `${TRIP_TYPE_LABEL[f.tripType]} · doctors do not block the air arm.`,
           actionLabel: "Dispatch flight",
           kind: "dispatch_air_trip",
           href: "/app/flights",
@@ -571,7 +583,9 @@ export async function loadQueue(user: {
           id: `adv-${f.id}`,
           who,
           what: `Notify pilots · ${f.flightCode}`,
-          why: "In-app brief for the assigned pilot. Writes an activity line. No text thread.",
+          why: phone
+            ? "Phone intake · notify the assigned pilot in-app. No text thread."
+            : "In-app brief for the assigned pilot. Writes an activity line. No text thread.",
           actionLabel: "Notify pilots",
           kind: "notify_pilots",
           href: "/app/flights",

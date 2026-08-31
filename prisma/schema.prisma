@@ -163,6 +163,19 @@ enum SalesEventStatus {
   CANCELED
 }
 
+enum CallType {
+  ORGAN_RESCUE
+  MEDICAL_CARGO
+  DOCTOR_CHARTER
+  OTHER_URGENT_MEDICAL
+}
+
+enum CallUrgency {
+  ROUTINE
+  URGENT
+  ORGAN_CLOCK
+}
+
 model User {
   id             String   @id @default(cuid())
   email          String   @unique
@@ -384,6 +397,7 @@ model Flight {
   createdAt        DateTime       @default(now())
   shipments        Shipment[]
   salesEvents      SalesEvent[]
+  callLogs         CallLog[]
 }
 
 /// Structure only. Never claim a live Part 135 certificate. No certificate number.
@@ -462,6 +476,24 @@ model ExpenseReport {
   note       String?
   status     String   @default("SUBMITTED")
   createdAt  DateTime @default(now())
+}
+
+/// Phone intake from Call Center. No patient name, DOB, or MRN.
+model CallLog {
+  id          String      @id @default(cuid())
+  receivedAt  DateTime    @default(now())
+  callerName  String
+  callerPhone String
+  callerOrg   String?
+  callType    CallType
+  origin      String?
+  destination String
+  notes       String?
+  urgency     CallUrgency
+  source      String      @default("call_center")
+  routedTo    String      @default("DEL")
+  flightId    String?
+  flight      Flight?     @relation(fields: [flightId], references: [id])
 }
 
 /// Sales desk. Not the admin clinic-approval CRM. No revenue totals.
