@@ -1,0 +1,322 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PUBLIC
+  CUSTOMER
+  CLINIC_ADMIN
+  DOCTOR
+  PHARMACY
+  MEDSTEAD_ADMIN
+  OPS
+  FINANCE
+}
+
+enum PriceMarket {
+  USA
+  INTL
+}
+
+enum ProductCategory {
+  RX
+  NON_RX
+  IV
+  SUPPLIES
+}
+
+enum ClinicOrderStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  INVOICE_GENERATED
+  PAYMENT_PENDING
+  PAYMENT_RECEIVED
+  PREPARING_SHIPMENT
+  MANIFEST_GENERATED
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+}
+
+enum ShipmentStatus {
+  SUBMITTED
+  COMPLIANCE_REVIEW
+  QUOTED
+  APPROVED_PAID
+  AWAITING_SUPPLIER
+  ORIGIN_RECEIVED_HOLD
+  RELEASED_MANIFESTED
+  IN_TRANSIT
+  CUSTOMS_HOLD_RELEASED
+  DESTINATION_RECEIVED
+  DELIVERED_CLOSED
+}
+
+enum FreightService {
+  EXPRESS_AIR
+  STANDARD_SEA
+}
+
+enum CrmStage {
+  TARGETED
+  CONTACTED
+  DISCOVERY
+  QUALIFIED
+  FORUM_CONSULT
+  ELIGIBILITY_REVIEW
+  ACTIVATED
+  FIRST_SERVICE
+  REPEAT
+  STRATEGIC
+  HOLD
+  LOST
+}
+
+enum GateName {
+  CUSTOMER_CONSIGNEE
+  PRODUCT_SOURCE
+  COMMERCIAL_FINANCE
+  EXPORT_IMPORT
+  PACKAGING_QUALITY
+  CARRIER_CAPACITY
+}
+
+enum GateState {
+  PENDING
+  GREEN
+  RED
+}
+
+enum PriceLabel {
+  SOURCED
+  DEMO
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           Role
+  active         Boolean  @default(true)
+  clinicId       String?
+  clinic         Clinic?  @relation(fields: [clinicId], references: [id])
+  rewardsPoints  Int      @default(0)
+  warehouseCode  String?
+  phone          String?
+  createdAt      DateTime @default(now())
+  orders         ClinicOrder[]
+  quotes         FreightQuote[]
+  shipments      Shipment[]     @relation("CustomerShipments")
+  payments       Payment[]
+  statusChanges  StatusEvent[]
+  gateSigns      ReleaseGate[]
+}
+
+model Clinic {
+  id           String      @id @default(cuid())
+  name         String
+  country      String
+  city         String
+  market       PriceMarket
+  type         String
+  approved     Boolean     @default(false)
+  address      String
+  contactEmail String
+  licenseNote  String?
+  createdAt    DateTime    @default(now())
+  users        User[]
+  orders       ClinicOrder[]
+  crm          CrmAccount?
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  sku         String          @unique
+  name        String
+  strength    String?
+  form        String?
+  category    ProductCategory
+  description String?
+  prices      PriceTier[]
+  items       ClinicOrderItem[]
+  inventory   InventoryItem?
+}
+
+model PriceTier {
+  id        String      @id @default(cuid())
+  productId String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  market    PriceMarket
+  minQty    Int
+  maxQty    Int
+  unitPrice Float
+  label     PriceLabel  @default(DEMO)
+}
+
+model InventoryItem {
+  id        String  @id @default(cuid())
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  onHand    Int     @default(0)
+  reserved  Int     @default(0)
+  location  String  @default("FLL-C15")
+}
+
+model ClinicOrder {
+  id          String            @id @default(cuid())
+  orderNumber String            @unique
+  clinicId    String
+  clinic      Clinic            @relation(fields: [clinicId], references: [id])
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  status      ClinicOrderStatus @default(SUBMITTED)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       ClinicOrderItem[]
+  invoice     Invoice?
+  manifest    Manifest?
+  events      StatusEvent[]
+  shipment    Shipment?
+}
+
+model ClinicOrderItem {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     ClinicOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product     @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Float
+  priceLabel PriceLabel @default(DEMO)
+}
+
+model Invoice {
+  id            String      @id @default(cuid())
+  number        String      @unique
+  orderId       String      @unique
+  order         ClinicOrder @relation(fields: [orderId], references: [id])
+  amount        Float
+  paidAmount    Float       @default(0)
+  status        String      @default("open")
+  issuedAt      DateTime    @default(now())
+  dueAt         DateTime?
+  payments      Payment[]
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  amount    Float
+  method    String
+  online    Boolean  @default(false)
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Manifest {
+  id          String      @id @default(cuid())
+  number      String      @unique
+  orderId     String      @unique
+  order       ClinicOrder @relation(fields: [orderId], references: [id])
+  origin      String
+  destination String
+  createdAt   DateTime    @default(now())
+}
+
+model FreightQuote {
+  id          String         @id @default(cuid())
+  quoteNumber String         @unique
+  userId      String?
+  user        User?          @relation(fields: [userId], references: [id])
+  origin      String
+  destination String
+  service     FreightService
+  weightLb    Float
+  pieces      Int            @default(1)
+  listAmount  Float
+  onlineAmount Float
+  description String?
+  createdAt   DateTime       @default(now())
+  shipment    Shipment?
+}
+
+model Shipment {
+  id            String         @id @default(cuid())
+  shipmentCode  String         @unique
+  status        ShipmentStatus @default(SUBMITTED)
+  service       FreightService
+  origin        String
+  destination   String
+  weightLb      Float
+  pieces        Int            @default(1)
+  customerId    String?
+  customer      User?          @relation("CustomerShipments", fields: [customerId], references: [id])
+  quoteId       String?        @unique
+  quote         FreightQuote?  @relation(fields: [quoteId], references: [id])
+  clinicOrderId String?        @unique
+  clinicOrder   ClinicOrder?   @relation(fields: [clinicOrderId], references: [id])
+  consignee     String
+  description   String?
+  publicClock   Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  gates         ReleaseGate[]
+  events        StatusEvent[]
+}
+
+model ReleaseGate {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  name        GateName
+  state       GateState @default(PENDING)
+  note        String?
+  signedById  String?
+  signedBy    User?    @relation(fields: [signedById], references: [id])
+  updatedAt   DateTime @updatedAt
+}
+
+model StatusEvent {
+  id            String   @id @default(cuid())
+  clinicOrderId String?
+  clinicOrder   ClinicOrder? @relation(fields: [clinicOrderId], references: [id], onDelete: Cascade)
+  shipmentId    String?
+  shipment      Shipment?    @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  fromStatus    String?
+  toStatus      String
+  note          String?
+  actorId       String?
+  actor         User?    @relation(fields: [actorId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model CrmAccount {
+  id         String    @id @default(cuid())
+  name       String
+  kind       String
+  market     String
+  country    String
+  stage      CrmStage  @default(TARGETED)
+  holdReason String?
+  ownerNote  String?
+  clinicId   String?   @unique
+  clinic     Clinic?   @relation(fields: [clinicId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ShipmentSequence {
+  id    String @id @default("global")
+  lastN Int    @default(0)
+}
