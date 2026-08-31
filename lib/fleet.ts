@@ -10,10 +10,13 @@ export type FleetRow = {
 };
 
 export function fleetLine(ac: FleetRow) {
-  const bits = [ac.name];
-  if (ac.type?.trim()) bits.push(ac.type.trim());
-  if (ac.tailNumber?.trim()) bits.push(ac.tailNumber.trim());
-  return bits.join(" · ");
+  const name = ac.name.trim();
+  const type = ac.type?.trim() || "";
+  const tail = ac.tailNumber?.trim() || "";
+  const bits = [name];
+  if (type && type.toLowerCase() !== name.toLowerCase()) bits.push(type);
+  if (tail) bits.push(tail);
+  return bits.filter(Boolean).join(" · ");
 }
 
 export function flightAircraftLine(

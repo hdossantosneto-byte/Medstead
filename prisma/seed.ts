@@ -829,6 +829,36 @@ async function main() {
     },
   });
 
+  // Bolt ops Aircraft page is the source of truth. Exactly these three. Home base stays FLL.
+  await prisma.aircraft.createMany({
+    data: [
+      {
+        tailNumber: "N127TX",
+        type: "Beechcraft King Air 100",
+        name: "Beechcraft King Air 100",
+        homeBase: "FLL",
+        status: "CURRENT",
+        corridors: "FLL_NAS,FLL_FPO",
+      },
+      {
+        tailNumber: "N275RC",
+        type: "Cessna 402",
+        name: "Cessna 402",
+        homeBase: "FLL",
+        status: "MX",
+        corridors: "FLL_NAS,FLL_FPO",
+      },
+      {
+        tailNumber: "N3710W",
+        type: "Piper PA-32",
+        name: "Piper PA-32",
+        homeBase: "FLL",
+        status: "CURRENT",
+        corridors: "FLL_NAS,FLL_FPO",
+      },
+    ],
+  });
+
   await prisma.flight.create({
     data: {
       flightCode: "MTG-A-TRAV-001",
@@ -1193,16 +1223,25 @@ async function main() {
     throw new Error(`Expected 40+ legal IV/supply rows, parsed ${legal.length}`);
   }
 
-  const fleet = await prisma.aircraft.findMany();
-  if (fleet.length > 0) {
-    throw new Error("Do not seed invented tails. Current fleet stays empty until Hairson names one.");
+  const fleet = await prisma.aircraft.findMany({ orderBy: { tailNumber: "asc" } });
+  const expectedTails = ["N127TX", "N275RC", "N3710W"];
+  const tails = fleet.map((a) => a.tailNumber);
+  if (fleet.length !== 3 || expectedTails.some((t) => !tails.includes(t))) {
+    throw new Error(`Current fleet must be exactly ${expectedTails.join(", ")}. Got ${tails.join(", ") || "none"}.`);
+  }
+  const n275 = fleet.find((a) => a.tailNumber === "N275RC");
+  if (n275?.status !== "MX") {
+    throw new Error("N275RC must be MX on the operating fleet.");
+  }
+  if (fleet.some((a) => /flying club|pompano|islander/i.test(`${a.name} ${a.type ?? ""}`))) {
+    throw new Error("Do not seed Pompano Beach Flying Club or Islander tails.");
   }
   const airNotes = await prisma.flight.findMany({ select: { aircraftNote: true, flightCode: true } });
   const badNote = airNotes.find(
-    (f) => /tbd|hairson fills|placeholder|future 135|n\d{2,}/i.test(f.aircraftNote ?? ""),
+    (f) => /tbd|hairson fills|placeholder|future 135/i.test(f.aircraftNote ?? ""),
   );
   if (badNote) {
-    throw new Error(`Flight ${badNote.flightCode} used a placeholder or invented tail note.`);
+    throw new Error(`Flight ${badNote.flightCode} used a placeholder aircraft note.`);
   }
 
   const matias = await prisma.payee.create({
@@ -1274,7 +1313,7 @@ async function main() {
 
   const userCount = await prisma.user.count();
   console.log(
-    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + sales desk + orders + payroll dates + Wayne payable + MTG Airlines trips.`,
+    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + sales desk + orders + payroll dates + Wayne payable + current fleet N127TX/N275RC/N3710W + MTG Airlines trips.`,
   );
 }
 

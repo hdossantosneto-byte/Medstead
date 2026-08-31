@@ -642,8 +642,8 @@ export async function addAircraft(form: {
   const homeBase = (form.homeBase?.trim().toUpperCase() || "FLL").slice(0, 8);
   if (!name) return { error: "Callsign or name is required." };
   const blocked = `${name} ${type ?? ""}`.toLowerCase();
-  if (/\b(cessna 402|islander|king air|flying[- ]club)\b/.test(blocked)) {
-    return { error: "That type is not MedStead fleet unless Hairson names it." };
+  if (/\b(islander|flying[- ]club|pompano)\b/.test(blocked)) {
+    return { error: "Flying-club and unnamed types stay off this fleet." };
   }
   if (tailNumber) {
     const taken = await prisma.aircraft.findUnique({ where: { tailNumber } });

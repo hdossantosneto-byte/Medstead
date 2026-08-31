@@ -409,7 +409,7 @@ enum AircraftStatus {
   DOWN
 }
 
-/// Operating fleet. Empty is honest when no real tails are on file. Do not invent N-numbers.
+/// Operating fleet from Bolt Aircraft. Do not invent extra tails.
 model Aircraft {
   id         String         @id @default(cuid())
   tailNumber String?        @unique
