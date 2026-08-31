@@ -21,8 +21,9 @@ export default async function PayrollPage() {
       />
       <Notice>{ADP_BANNER}</Notice>
       <p className="mt-3 text-sm text-navy-800/70">
-        Paying entity: <strong>{PAYING_ENTITY}</strong>. Source: {PAY_METHOD_ZELLE}. Payees are not
-        employees. Clinic AR stays on Invoices.
+        Paying entity: <strong>{PAYING_ENTITY}</strong>. Source of pay:{" "}
+        <strong>{PAY_METHOD_ZELLE}</strong>. Last-4 only. Payees are not employees. Clinic AR stays
+        on Invoices.
       </p>
       <div className="mt-6 space-y-3">
         {rows.map((row) => (
@@ -35,7 +36,7 @@ export default async function PayrollPage() {
                 )}
                 <p className="mt-2 font-display text-3xl text-navy-900">{money(row.amount)}</p>
                 <p className="mt-1 text-sm text-navy-800/70">Due {whenDate(row.dueAt)}</p>
-                <p className="mt-1 text-sm text-navy-800/70">{row.method}</p>
+                <p className="mt-1 text-sm text-navy-800/70">{PAY_METHOD_ZELLE}</p>
               </div>
               <div className="flex flex-col items-start gap-2 sm:items-end">
                 <Badge tone={row.status === "SENT" ? "green" : "amber"}>

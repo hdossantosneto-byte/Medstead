@@ -11,6 +11,7 @@ import {
 import bcrypt from "bcryptjs";
 import { loadLegalIntlRows } from "./legal-catalog";
 import { CLINIC_DRIVES_SHIPMENT, publicClockOn } from "../lib/handoff";
+import { PAYING_ENTITY, PAY_METHOD_ZELLE } from "../lib/constants";
 
 const prisma = new PrismaClient();
 const PASSWORD = "demo1234";
@@ -848,11 +849,11 @@ async function main() {
     await prisma.scheduledPay.create({
       data: {
         payeeId: matias.id,
-        payingEntity: "MEDSTEAD LLC",
+        payingEntity: PAYING_ENTITY,
         amount: 1500,
         currency: "USD",
         dueAt: new Date(`${day}T12:00:00.000Z`),
-        method: "Zelle · Chase ••9696 · MEDSTEAD LLC",
+        method: PAY_METHOD_ZELLE,
         status: "SCHEDULED",
         recurring: true,
         note: "Recurring 1st and 15th. Scheduled / not sent.",
@@ -862,11 +863,11 @@ async function main() {
   await prisma.scheduledPay.create({
     data: {
       payeeId: murph.id,
-      payingEntity: "MEDSTEAD LLC",
+      payingEntity: PAYING_ENTITY,
       amount: 3500,
       currency: "USD",
       dueAt: new Date("2026-09-05T12:00:00.000Z"),
-      method: "Zelle · Chase ••9696 · MEDSTEAD LLC",
+      method: PAY_METHOD_ZELLE,
       status: "SCHEDULED",
       recurring: false,
       note: "Pay date to track. Scheduled / not sent.",
