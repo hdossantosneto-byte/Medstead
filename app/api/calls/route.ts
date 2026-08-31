@@ -7,22 +7,24 @@ import { auth } from "@/lib/session";
  *
  * Auth: signed-in admin, ops, or sales (session cookie).
  *
- * JSON body:
+ * JSON body (snake_case from Call Center or SCREAMING_SNAKE both work):
  * {
- *   callerName: string,          // facility / caller, NOT a patient name
+ *   callerName: string,          // facility / caller — NOT a patient name
  *   callerPhone: string,
  *   callerOrg?: string,
- *   callType: "ORGAN_RESCUE" | "MEDICAL_CARGO" | "DOCTOR_CHARTER" | "OTHER_URGENT_MEDICAL",
+ *   callType: "organ_rescue" | "medical_cargo" | "doctor_charter" | "other_urgent_medical",
  *   origin?: string,             // default FLL
  *   destination: string,         // NAS | FPO | MSY
  *   notes?: string,              // operational only — no patient name, DOB, or MRN
- *   urgency: "ROUTINE" | "URGENT" | "ORGAN_CLOCK",
- *   source?: string              // default "call_center"
+ *   urgency: "routine" | "urgent" | "organ_clock",
+ *   source?: string,             // default "call_center"
+ *   routedTo?: "DEL"             // always stored as DEL
  * }
  *
  * Creates a CallLog and an MTG Airlines flight so Del gets a next action
- * (Schedule / Dispatch / Notify pilots) without re-typing. organ_rescue
- * opens a TIME-CRITICAL rescue organ trip. Does not claim OPO / UNOS status.
+ * (Schedule / Dispatch / Notify pilots) without re-typing.
+ * organ_rescue opens a TIME-CRITICAL rescue organ trip + Notify pilots.
+ * Does not claim OPO / UNOS status. No PHI fields on this record.
  */
 export async function POST(req: Request) {
   const session = await auth();
@@ -40,15 +42,15 @@ export async function POST(req: Request) {
     callerName: b.callerName ?? "",
     callerPhone: b.callerPhone ?? "",
     callerOrg: b.callerOrg,
-    callType: (b.callType as "ORGAN_RESCUE") ?? "OTHER_URGENT_MEDICAL",
+    callType: b.callType ?? "",
     origin: b.origin,
     destination: b.destination ?? "",
     notes: b.notes,
-    urgency: (b.urgency as "ROUTINE") ?? "ROUTINE",
+    urgency: b.urgency ?? "",
     source: b.source,
   });
   if (res && "error" in res && res.error) {
-    const status = res.error.includes("sign") || res.error.includes("login") ? 401 : 400;
+    const status = res.error.includes("Sign in") || res.error.includes("login") ? 401 : 400;
     return NextResponse.json({ error: res.error }, { status });
   }
   return NextResponse.json(res);

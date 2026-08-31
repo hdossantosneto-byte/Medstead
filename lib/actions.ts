@@ -869,25 +869,33 @@ export async function acknowledgePilotBrief(flightId: string) {
   return { ok: true };
 }
 
+const CALL_TYPES = ["ORGAN_RESCUE", "MEDICAL_CARGO", "DOCTOR_CHARTER", "OTHER_URGENT_MEDICAL"] as const;
+const CALL_URGENCIES = ["ROUTINE", "URGENT", "ORGAN_CLOCK"] as const;
+
+function normalizeCallEnum<T extends string>(raw: string | undefined, allowed: readonly T[]): T | null {
+  const v = (raw ?? "").trim().toUpperCase().replace(/-/g, "_");
+  return (allowed as readonly string[]).includes(v) ? (v as T) : null;
+}
+
 export async function ingestCall(input: {
   callerName: string;
   callerPhone: string;
   callerOrg?: string;
-  callType: "ORGAN_RESCUE" | "MEDICAL_CARGO" | "DOCTOR_CHARTER" | "OTHER_URGENT_MEDICAL";
+  callType: string;
   origin?: string;
   destination: string;
   notes?: string;
-  urgency: "ROUTINE" | "URGENT" | "ORGAN_CLOCK";
+  urgency: string;
   source?: string;
 }) {
   const actor = await requireRole(["MEDSTEAD_ADMIN", "OPS", "SALES"]);
   const callerName = input.callerName.trim();
   const callerPhone = input.callerPhone.trim();
   const dest = input.destination.trim().toUpperCase();
-  const types = ["ORGAN_RESCUE", "MEDICAL_CARGO", "DOCTOR_CHARTER", "OTHER_URGENT_MEDICAL"] as const;
-  const urgencies = ["ROUTINE", "URGENT", "ORGAN_CLOCK"] as const;
-  if (!types.includes(input.callType)) return { error: "Unknown call type." };
-  if (!urgencies.includes(input.urgency)) return { error: "Unknown urgency." };
+  const callType = normalizeCallEnum(input.callType, CALL_TYPES);
+  const urgency = normalizeCallEnum(input.urgency, CALL_URGENCIES);
+  if (!callType) return { error: "Unknown call type." };
+  if (!urgency) return { error: "Unknown urgency." };
   if (!callerName || !callerPhone) return { error: "Caller name and phone are required. No patient identifiers." };
   if (!dest) return { error: "Destination is required." };
   const corridor = corridorForDest(dest);
@@ -896,11 +904,11 @@ export async function ingestCall(input: {
   const origin = (input.origin || "FLL").trim().toUpperCase();
   const org = input.callerOrg?.trim() || "Phone intake";
   const notes = input.notes?.trim() || "";
-  const rescue = input.callType === "ORGAN_RESCUE";
+  const rescue = callType === "ORGAN_RESCUE";
   const tripType: FlightTripType =
     rescue
       ? "RESCUE_ORGAN"
-      : input.callType === "DOCTOR_CHARTER"
+      : callType === "DOCTOR_CHARTER"
         ? "DOCTOR_CHARTER"
         : "MEDICAL_CARGO";
   const phoneLine = `Phone intake · ${org} · ${callerPhone} · routed to Del. Do not re-type. No patient name.`;
@@ -936,11 +944,11 @@ export async function ingestCall(input: {
       callerName,
       callerPhone,
       callerOrg: input.callerOrg?.trim() || null,
-      callType: input.callType,
+      callType,
       origin,
       destination: dest,
       notes: notes || null,
-      urgency: input.urgency,
+      urgency,
       source: input.source?.trim() || "call_center",
       routedTo: "DEL",
       flightId: flight.id,

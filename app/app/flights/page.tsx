@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CallIntakeForm } from "@/components/call-intake-form";
 import { DedicatedNextButton } from "@/components/next-queue";
 import { Badge, Button, Card, PageHeader } from "@/components/ui";
 import {
@@ -94,6 +95,19 @@ export default async function FlightsPage() {
       <Card className="mb-4 border-amber-200 bg-amber-50 p-4">
         <p className="text-sm leading-6 text-navy-800">{PART135_BANNER}</p>
       </Card>
+
+      {del && (
+        <Card className="mb-4 p-5">
+          <p className="font-display text-2xl text-navy-900">Phone intake</p>
+          <p className="mt-1 text-sm text-navy-800/60">
+            Call Center can POST /api/calls. Logging one here opens the trip so you do not re-type.
+            No patient name, DOB, or MRN.
+          </p>
+          <div className="mt-4">
+            <CallIntakeForm />
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-3">
         {CORRIDORS.map((c) => (
