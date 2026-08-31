@@ -6,7 +6,7 @@ import { clsx } from "@/lib/format";
 
 const TABS = [
   { href: "/", label: "Home", match: (p: string) => p === "/" },
-  { href: "/freight", label: "Ship", match: (p: string) => p.startsWith("/freight") || p.startsWith("/shop-and-ship") },
+  { href: "/freight", label: "Ship", match: (p: string) => p.startsWith("/freight") || p.startsWith("/ship") || p.startsWith("/shop-and-ship") },
   { href: "/track", label: "Track", match: (p: string) => p.startsWith("/track") },
   { href: "/orders", label: "Orders", match: (p: string) => p.startsWith("/orders") || p.startsWith("/cart") },
   { href: "/contact", label: "Support", match: (p: string) => p.startsWith("/contact") },

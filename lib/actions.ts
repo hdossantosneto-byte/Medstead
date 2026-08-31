@@ -16,6 +16,7 @@ import {
   GATE_LABEL,
   GATE_ORDER,
   SHIPMENT_STATUSES,
+  WELCOME_POINTS,
 } from "./constants";
 import { prisma } from "./prisma";
 import { unitPriceForQty } from "./pricing";
@@ -655,6 +656,34 @@ export async function markScheduledPaySent(id: string) {
     data: { status: "SENT", note: row.note },
   });
   revalidateApp();
+  return { ok: true };
+}
+
+export async function createFreightAccount(form: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  const email = form.email.toLowerCase().trim();
+  const name = form.name.trim();
+  if (!email || !name) return { error: "Name and email are required." };
+  if (form.password.length < 8) return { error: "Password must be at least 8 characters." };
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return { error: "That email already has a seat. Sign in." };
+  const bcrypt = (await import("bcryptjs")).default;
+  const passwordHash = await bcrypt.hash(form.password, 10);
+  const warehouseCode = `MS-C15-${String(1000 + Math.floor(Math.random() * 8000))}`;
+  await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      name,
+      role: "CUSTOMER",
+      active: true,
+      rewardsPoints: WELCOME_POINTS,
+      warehouseCode,
+    },
+  });
   return { ok: true };
 }
 

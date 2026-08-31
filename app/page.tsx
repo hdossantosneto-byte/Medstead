@@ -30,8 +30,8 @@ export default function HomePage() {
           <Button href="/freight" variant="ghost">
             + New order
           </Button>
-          <Button href="/demo" variant="secondary">
-            Try the demo
+          <Button href="/signup" variant="secondary">
+            Sign up
           </Button>
         </div>
       </section>

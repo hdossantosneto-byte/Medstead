@@ -35,7 +35,12 @@ export async function PublicNav() {
               Workspace
             </Button>
           ) : (
-            <Button href="/login">Sign in</Button>
+            <>
+              <Button href="/signup" variant="ghost" className="hidden min-h-tap sm:inline-flex">
+                Sign up
+              </Button>
+              <Button href="/login">Sign in</Button>
+            </>
           )}
         </div>
       </div>

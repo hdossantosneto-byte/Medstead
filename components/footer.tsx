@@ -17,9 +17,10 @@ const SERVICES = [
 ];
 
 const QUICK = [
-  { href: "/demo", label: "Create account / demo" },
-  { href: "/login", label: "Customer login" },
-  { href: "/freight", label: "Ship now" },
+  { href: "/signup", label: "Sign up" },
+  { href: "/login", label: "Login" },
+  { href: "/demo", label: "Demo roles" },
+  { href: "/freight", label: "Ship Now" },
   { href: "/contact", label: "Support" },
 ];
 
