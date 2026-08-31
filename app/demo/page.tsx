@@ -1,10 +1,11 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Wordmark } from "@/components/brand";
 import { Badge, Card } from "@/components/ui";
+import { homePathForRole } from "@/lib/home";
 
 const ACCOUNTS = [
   {
@@ -72,7 +73,8 @@ export default function DemoPage() {
       setError("Demo login failed. Run npm run db:setup first.");
       return;
     }
-    router.push("/app");
+    const session = await getSession();
+    router.push(homePathForRole(session?.user?.role));
     router.refresh();
   }
 
@@ -90,7 +92,7 @@ export default function DemoPage() {
           Prove Del dispatch
         </p>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-navy-800/80">
-          <li>Enter as doctor — see CO-1008 (Bethel). Shop or open Your orders.</li>
+          <li>Enter as doctor — Shop the book or open Your orders. CO-1008 (Bethel) has Track package.</li>
           <li>Enter as finance — mark paid only if an invoice is waiting.</li>
           <li>Enter as Del — tap <strong>Dispatch flight</strong> on the FLL–NAS package. The doctor does not block cargo.</li>
           <li>Enter as doctor again — CO-1008 is In Transit. No call to Del.</li>

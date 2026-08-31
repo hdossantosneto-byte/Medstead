@@ -73,6 +73,7 @@ function demoUsaIvPrice(intl: number) {
 async function main() {
   await prisma.scheduledPay.deleteMany();
   await prisma.payee.deleteMany();
+  await prisma.expenseReport.deleteMany();
   await prisma.releaseGate.deleteMany();
   await prisma.statusEvent.deleteMany();
   await prisma.payment.deleteMany();
@@ -678,6 +679,7 @@ async function main() {
       listAmount: 228.65,
       onlineAmount: 205.79,
       description: "Clinic supply carton — no customs-broker claim",
+      status: "APPROVED",
     },
   });
 
@@ -693,6 +695,7 @@ async function main() {
       listAmount: 241.2,
       onlineAmount: 217.08,
       description: "Standard sea demo quote",
+      status: "UNDER_REVIEW",
     },
   });
 

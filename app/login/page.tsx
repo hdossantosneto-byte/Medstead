@@ -1,10 +1,11 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Wordmark } from "@/components/brand";
 import { Button, Card, Field, inputClass } from "@/components/ui";
+import { homePathForRole } from "@/lib/home";
 
 function LoginForm() {
   const router = useRouter();
@@ -28,7 +29,8 @@ function LoginForm() {
       setError("Sign in failed. Check email and password.");
       return;
     }
-    router.push("/app");
+    const session = await getSession();
+    router.push(homePathForRole(session?.user?.role));
     router.refresh();
   }
 

@@ -32,6 +32,7 @@ export type QueueKind =
   | "freeze_manifest"
   | "go_no_go"
   | "dispatch_flight"
+  | "approve_quote"
   | "open";
 
 export type QueueItem = {
@@ -49,6 +50,7 @@ export type QueueItem = {
   crmId?: string;
   gate?: GateName;
   flightId?: string;
+  quoteId?: string;
   needsDate?: boolean;
 };
 
@@ -230,6 +232,24 @@ export async function loadQueue(user: {
         kind: "sign_finance_gate",
         href: "/app/finance/invoices",
         shipmentId: g.shipmentId,
+      });
+    }
+
+    const reviewQuotes = await prisma.freightQuote.findMany({
+      where: { status: "UNDER_REVIEW" },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    });
+    for (const q of reviewQuotes) {
+      items.push({
+        id: `qrev-${q.id}`,
+        who: q.user?.name ?? "Freight customer",
+        what: `Approve quote ${q.quoteNumber}`,
+        why: "Quote under review · customer sees this until finance or admin approves. Do not auto-price below the floor.",
+        actionLabel: "Approve quote",
+        kind: "approve_quote",
+        href: "/app/finance/quotes",
+        quoteId: q.id,
       });
     }
 
@@ -521,31 +541,45 @@ export async function loadQueue(user: {
         include: { invoice: true },
         orderBy: { createdAt: "desc" },
       });
-      for (const o of orders) {
-        if (o.status === "PAYMENT_PENDING" && o.invoice && o.invoice.status !== "paid") {
-          items.push({
-            id: `cpay-${o.id}`,
-            who: user.clinic?.name ?? "Your clinic",
-            what: `Pay invoice ${o.invoice.number}`,
-            why: "Payment pending · pay here so ops can prepare. No need to message finance.",
-            actionLabel: "Pay invoice",
-            kind: "clinic_pay",
-            href: `/app/clinic/orders/${o.id}`,
-            invoiceId: o.invoice.id,
-            orderId: o.id,
-          });
-        } else if (o.status !== "DELIVERED") {
-          items.push({
-            id: `csee-${o.id}`,
-            who: user.clinic?.name ?? "Your clinic",
-            what: `${o.orderNumber} is ${CLINIC_ORDER_LABEL[o.status]}`,
-            why: o.activityLine || "Open the record to see who has the next step. Do not call ops for dates.",
-            actionLabel: "Open order",
-            kind: "open",
-            href: `/app/clinic/orders/${o.id}`,
-            orderId: o.id,
-          });
-        }
+      const due = orders.filter(
+        (o) => o.status === "PAYMENT_PENDING" && o.invoice && o.invoice.status !== "paid",
+      );
+      for (const o of due) {
+        items.push({
+          id: `cpay-${o.id}`,
+          who: user.clinic?.name ?? "Your clinic",
+          what: `Pay invoice ${o.invoice!.number}`,
+          why: "Payment pending · pay here so ops can prepare. No need to message finance.",
+          actionLabel: "Pay invoice",
+          kind: "clinic_pay",
+          href: `/app/clinic/orders/${o.id}`,
+          invoiceId: o.invoice!.id,
+          orderId: o.id,
+        });
+      }
+      if (due.length === 0) {
+        items.push({
+          id: "clinic-shop",
+          who: user.clinic?.name ?? "Your clinic",
+          what: "Shop the clinic book",
+          why: "Search, add to cart, place order. Completing it hands the record to admin review.",
+          actionLabel: "Shop",
+          kind: "open",
+          href: "/app/clinic/catalog",
+        });
+      }
+      const latestOpen = orders.find((o) => o.status !== "DELIVERED" && !due.some((d) => d.id === o.id));
+      if (latestOpen) {
+        items.push({
+          id: `csee-${latestOpen.id}`,
+          who: user.clinic?.name ?? "Your clinic",
+          what: `${latestOpen.orderNumber} is ${CLINIC_ORDER_LABEL[latestOpen.status]}`,
+          why: latestOpen.activityLine || "Track this order. Do not call ops for dates.",
+          actionLabel: "Track package",
+          kind: "open",
+          href: `/app/clinic/orders/${latestOpen.id}`,
+          orderId: latestOpen.id,
+        });
       }
     }
   }
@@ -564,9 +598,20 @@ export async function loadQueue(user: {
         who: s.consignee,
         what: `Track ${s.shipmentCode}`,
         why: s.activityLine || `${SHIPMENT_LABEL[s.status]} · public clock starts after release.`,
-        actionLabel: "Open tracking",
+        actionLabel: "Track package",
         kind: "open",
         href: `/track/${s.shipmentCode}`,
+      });
+    }
+    if (shipments.length === 0) {
+      items.push({
+        id: "cust-ship",
+        who: "WareSpace C15",
+        what: "Start a freight order",
+        why: "Paste a US retailer link or describe a package. We receive at C15 and forward.",
+        actionLabel: "Shop & Ship",
+        kind: "open",
+        href: "/shop-and-ship",
       });
     }
   }

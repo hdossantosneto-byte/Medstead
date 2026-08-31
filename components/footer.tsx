@@ -4,11 +4,13 @@ import { Wordmark } from "./brand";
 
 const SERVICES = [
   { href: "/orders", label: "Orders & Packages" },
+  { href: "/shop-and-ship", label: "Shop & Ship" },
   { href: "/freight", label: "Express Air freight" },
   { href: "/freight", label: "Standard Sea freight" },
   { href: "/track", label: "Package tracking" },
   { href: "/warehouse", label: "US warehouse" },
   { href: "/rewards", label: "Rewards program" },
+  { href: "/telehealth", label: "Telehealth partners" },
 ];
 
 const QUICK = [

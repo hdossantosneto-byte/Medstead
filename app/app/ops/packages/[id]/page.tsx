@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { DedicatedNextButton } from "@/components/next-queue";
 import { GateToggle, ShipmentStatusForm } from "@/components/admin-forms";
 import { Badge, Card, PageHeader } from "@/components/ui";
-import { CLINIC_ORDER_LABEL, GATE_LABEL, SERVICE_LABEL, SHIPMENT_LABEL } from "@/lib/constants";
+import { CLINIC_ORDER_LABEL, CUSTODY_LABEL, GATE_LABEL, SERVICE_LABEL, SHIPMENT_LABEL } from "@/lib/constants";
+import { when } from "@/lib/format";
 import { loadQueue } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
@@ -11,7 +12,13 @@ export default async function OpsPackageDetail({ params }: { params: { id: strin
   const user = await requireRole(["OPS", "MEDSTEAD_ADMIN"]);
   const shipment = await prisma.shipment.findUnique({
     where: { id: params.id },
-    include: { gates: true, clinicOrder: true, flight: true },
+    include: {
+      gates: true,
+      clinicOrder: { include: { invoice: true } },
+      flight: true,
+      events: { orderBy: { createdAt: "asc" } },
+      quote: true,
+    },
   });
   if (!shipment) notFound();
   const queue = await loadQueue(user);
@@ -30,6 +37,11 @@ export default async function OpsPackageDetail({ params }: { params: { id: strin
           <Badge tone="teal">{SHIPMENT_LABEL[shipment.status]}</Badge>
           {shipment.clinicOrder && <Badge>{CLINIC_ORDER_LABEL[shipment.clinicOrder.status]}</Badge>}
           <Badge tone={green === 6 ? "green" : "amber"}>Gates {green}/6</Badge>
+          {shipment.clinicOrder?.invoice && (
+            <Badge tone={shipment.clinicOrder.invoice.status === "paid" ? "green" : "amber"}>
+              Counter {shipment.clinicOrder.invoice.status === "paid" ? "paid" : "due"}
+            </Badge>
+          )}
         </div>
         <p className="mt-3 text-sm text-navy-800/70">
           {shipment.origin} → {shipment.destination} · {SERVICE_LABEL[shipment.service]} ·{" "}
@@ -62,6 +74,24 @@ export default async function OpsPackageDetail({ params }: { params: { id: strin
       </Card>
       <Card className="mt-4 p-5">
         <ShipmentStatusForm shipmentId={shipment.id} current={shipment.status} canShip />
+      </Card>
+      <Card className="mt-4 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
+          Chain of custody
+        </p>
+        {shipment.events.length === 0 ? (
+          <p className="mt-3 text-sm text-navy-800/60">No handoffs yet.</p>
+        ) : (
+          <ol className="mt-3 space-y-2">
+            {shipment.events.map((e) => (
+              <li key={e.id} className="text-sm text-navy-800">
+                <span className="font-semibold">{CUSTODY_LABEL[e.toStatus] ?? e.toStatus}</span>
+                <span className="text-navy-800/50"> · {when(e.createdAt)}</span>
+                {e.note ? <span className="block text-navy-800/70">{e.note}</span> : null}
+              </li>
+            ))}
+          </ol>
+        )}
       </Card>
     </div>
   );

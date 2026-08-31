@@ -12,9 +12,10 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
   if (role === "PUBLIC" || role === "CUSTOMER") {
     base.push(
       { href: "/orders", label: "Orders & Packages" },
+      { href: "/shop-and-ship", label: "Shop & Ship" },
       { href: "/freight", label: "New order" },
-      { href: "/app/customer", label: "My freight" },
-      { href: "/track", label: "Track" },
+      { href: "/app/customer", label: "Your orders" },
+      { href: "/track", label: "Track package" },
     );
   }
   if (CLINIC_ROLES.includes(role)) {
@@ -36,12 +37,14 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
       { href: "/app/admin/invoices", label: "Invoices" },
       { href: "/app/admin/manifests", label: "Manifests" },
       { href: "/app/finance/payroll", label: "Payroll" },
+      { href: "/app/finance/expenses", label: "Expenses" },
     );
   }
   if (role === "FINANCE") {
     base.push(
       { href: "/app/finance/payroll", label: "Payroll" },
       { href: "/app/finance/quotes", label: "Quotes" },
+      { href: "/app/finance/expenses", label: "Expenses" },
       { href: "/app/finance/invoices", label: "Invoices" },
       { href: "/app/finance/payments", label: "Payments" },
       { href: "/app/finance/reports", label: "Reports" },

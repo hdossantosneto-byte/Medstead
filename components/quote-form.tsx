@@ -135,6 +135,7 @@ export function QuoteForm({
         </p>
         {result && (
           <div className="mt-4 rounded-xl bg-teal-50 p-3 text-sm">
+            <p className="font-semibold">Quote under review</p>
             {result.quoteNumber && <p>Quote {result.quoteNumber}</p>}
             {result.shipmentCode && (
               <p>

@@ -134,6 +134,7 @@ model User {
   payments       Payment[]
   statusChanges  StatusEvent[]
   gateSigns      ReleaseGate[]
+  expenses       ExpenseReport[]
 }
 
 model Clinic {
@@ -267,6 +268,8 @@ model FreightQuote {
   listAmount  Float
   onlineAmount Float
   description String?
+  retailerUrl String?
+  status      String         @default("UNDER_REVIEW")
   createdAt   DateTime       @default(now())
   shipment    Shipment?
 }
@@ -288,6 +291,7 @@ model Shipment {
   clinicOrder   ClinicOrder?   @relation(fields: [clinicOrderId], references: [id])
   consignee     String
   description   String?
+  retailerUrl   String?
   publicClock   Boolean        @default(false)
   activityLine  String?
   promisedDate  DateTime?
@@ -360,6 +364,20 @@ model CrmAccount {
 model ShipmentSequence {
   id    String @id @default("global")
   lastN Int    @default(0)
+}
+
+/// Team expense filing. Not a bank, not a payroll run, no balances.
+model ExpenseReport {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  title      String
+  amount     Float
+  currency   String   @default("USD")
+  incurredAt DateTime
+  note       String?
+  status     String   @default("SUBMITTED")
+  createdAt  DateTime @default(now())
 }
 
 /// Payee is not an employee. No employment type, W-2, or 1099.

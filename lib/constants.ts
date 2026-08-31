@@ -15,6 +15,7 @@ export const PUBLIC_LINE =
   "We provide medicinal goods and care, and expedite them to hard to reach destinations.";
 export const MISSION =
   "Our mission is to ensure every community has access to the health care it deserves.";
+export const PLATFORM_LINE = "One relationship. One coordinated platform.";
 export const CONTACT_ORDERS = "Orders@medsteadgroup.com";
 
 /** Finance books only. Do not print on the public site. */
@@ -231,6 +232,36 @@ export const INTL_NONRX_BREAKS = [
 export const ONLINE_PAY_DISCOUNT = 0.1;
 export const WELCOME_POINTS = 100;
 export const POINTS_PER_DOLLAR = 1;
+
+export const QUOTE_STATUS_LABEL: Record<string, string> = {
+  UNDER_REVIEW: "Quote under review",
+  APPROVED: "Approved",
+};
+
+export const AIRCRAFT_ROUTING = [
+  { kind: "Clinic / medical cargo", route: "Islander / air corridor" },
+  { kind: "Rush", route: "Express Air" },
+  { kind: "Bulk", route: "Standard Sea" },
+] as const;
+
+export const CUSTODY_LABEL: Record<string, string> = {
+  SUBMITTED: "Submitted",
+  COMPLIANCE_REVIEW: "Compliance review",
+  QUOTED: "Quoted",
+  APPROVED_PAID: "Approved / paid",
+  AWAITING_SUPPLIER: "Awaiting supplier",
+  ORIGIN_RECEIVED_HOLD: "Received C15",
+  RELEASED_MANIFESTED: "Manifested",
+  IN_TRANSIT: "Tendered / in transit",
+  CUSTOMS_HOLD_RELEASED: "Customs",
+  DESTINATION_RECEIVED: "Arrived",
+  DELIVERED_CLOSED: "POD",
+  TENDER: "Tendered",
+  DEPARTED: "Departed",
+  ARRIVED: "Arrived",
+  CUSTOMS: "Customs",
+  POD: "POD",
+};
 
 export const DESTINATIONS = [
   { code: "NAS", name: "Nassau, Bahamas" },

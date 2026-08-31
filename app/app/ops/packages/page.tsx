@@ -10,7 +10,7 @@ export default async function OpsPackagesPage() {
   const user = await requireRole(["OPS", "MEDSTEAD_ADMIN"]);
   const queue = await loadQueue(user);
   const shipments = await prisma.shipment.findMany({
-    include: { gates: true, clinicOrder: true, flight: true },
+    include: { gates: true, clinicOrder: { include: { invoice: true } }, flight: true, quote: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -40,6 +40,16 @@ export default async function OpsPackagesPage() {
                 {s.clinicOrder && <Badge>{CLINIC_ORDER_LABEL[s.clinicOrder.status]}</Badge>}
                 <Badge tone={green === 6 ? "green" : "amber"}>Gates {green}/6</Badge>
                 {s.publicClock ? <Badge tone="green">Clock on</Badge> : <Badge>Clock off</Badge>}
+                {s.clinicOrder?.invoice && (
+                  <Badge tone={s.clinicOrder.invoice.status === "paid" ? "green" : "amber"}>
+                    Counter {s.clinicOrder.invoice.status === "paid" ? "paid" : "due"}
+                  </Badge>
+                )}
+                {!s.clinicOrder && s.quote && (
+                  <Badge tone={s.quote.status === "APPROVED" ? "green" : "amber"}>
+                    Counter {s.quote.status === "APPROVED" ? "paid" : "due"}
+                  </Badge>
+                )}
               </div>
               {s.activityLine && <p className="mt-3 text-sm text-navy-800/70">{s.activityLine}</p>}
               {next && next.kind !== "open" && (

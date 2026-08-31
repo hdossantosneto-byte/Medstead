@@ -34,6 +34,9 @@ function revalidateApp() {
   revalidatePath("/app/ops/orders");
   revalidatePath("/app/flights");
   revalidatePath("/app/finance/payroll");
+  revalidatePath("/app/finance/quotes");
+  revalidatePath("/app/finance/expenses");
+  revalidatePath("/orders");
 }
 
 async function writeOrderActivity(
@@ -364,6 +367,7 @@ export async function createFreightQuote(input: {
   weightLb: number;
   pieces: number;
   description?: string;
+  retailerUrl?: string;
   createShipment?: boolean;
 }) {
   const session = await auth();
@@ -385,6 +389,8 @@ export async function createFreightQuote(input: {
       listAmount: amounts.listAmount,
       onlineAmount: amounts.onlineAmount,
       description: input.description,
+      retailerUrl: input.retailerUrl,
+      status: "UNDER_REVIEW",
     },
   });
 
@@ -404,8 +410,9 @@ export async function createFreightQuote(input: {
         quoteId: quote.id,
         consignee: sessionUser.name,
         description: input.description,
+        retailerUrl: input.retailerUrl,
         gates: { create: GATE_ORDER.map((name) => ({ name })) },
-        events: { create: { toStatus: "QUOTED", actorId: sessionUser.id } },
+        events: { create: { toStatus: "QUOTED", actorId: sessionUser.id, note: "Quoted · under review" } },
       },
     });
     if (sessionUser.role === "CUSTOMER" || sessionUser.role === "PUBLIC") {
@@ -418,8 +425,67 @@ export async function createFreightQuote(input: {
   }
 
   revalidatePath("/freight");
+  revalidatePath("/shop-and-ship");
   revalidatePath("/app/customer");
-  return { ok: true, quoteId: quote.id, quoteNumber: quote.quoteNumber, ...amounts, shipmentCode };
+  revalidatePath("/app/finance/quotes");
+  return {
+    ok: true,
+    quoteId: quote.id,
+    quoteNumber: quote.quoteNumber,
+    status: "UNDER_REVIEW",
+    ...amounts,
+    shipmentCode,
+  };
+}
+
+export async function approveFreightQuote(quoteId: string) {
+  const actor = await requireRole(["FINANCE", "MEDSTEAD_ADMIN"]);
+  const quote = await prisma.freightQuote.findUnique({
+    where: { id: quoteId },
+    include: { shipment: true },
+  });
+  if (!quote) return { error: "Quote not found." };
+  if (quote.status === "APPROVED") return { error: "Already approved." };
+  await prisma.freightQuote.update({
+    where: { id: quoteId },
+    data: { status: "APPROVED" },
+  });
+  if (quote.shipment) {
+    await advanceShipment(
+      quote.shipment.id,
+      "APPROVED_PAID",
+      actor.id,
+      "Finance approved quote · waiting on origin receive at C15.",
+    );
+  }
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function submitExpense(form: {
+  title: string;
+  amount: number;
+  incurredAt: string;
+  note?: string;
+}) {
+  const user = await requireRole(["FINANCE", "MEDSTEAD_ADMIN"]);
+  if (!form.title.trim()) return { error: "Add a title." };
+  if (!(form.amount > 0)) return { error: "Amount must be greater than zero." };
+  const incurredAt = new Date(form.incurredAt);
+  if (Number.isNaN(incurredAt.getTime())) return { error: "Need a date." };
+  await prisma.expenseReport.create({
+    data: {
+      userId: user.id,
+      title: form.title.trim(),
+      amount: form.amount,
+      incurredAt,
+      note: form.note?.trim() || null,
+      status: "SUBMITTED",
+    },
+  });
+  revalidatePath("/app/finance/expenses");
+  revalidatePath("/app/admin");
+  return { ok: true };
 }
 
 function corridorForDest(destination: string): FlightCorridor | null {
@@ -554,8 +620,13 @@ export async function runNextAction(input: {
   gate?: GateName;
   date?: string;
   flightId?: string;
+  quoteId?: string;
 }) {
   if (input.kind === "open") return { ok: true };
+
+  if (input.kind === "approve_quote" && input.quoteId) {
+    return approveFreightQuote(input.quoteId);
+  }
 
   if (input.kind === "approve_clinic" && input.clinicId) {
     return approveClinic(input.clinicId, true);

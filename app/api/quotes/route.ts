@@ -10,6 +10,7 @@ const schema = z.object({
   weightLb: z.number().positive(),
   pieces: z.number().int().positive(),
   description: z.string().optional(),
+  retailerUrl: z.string().optional(),
   createShipment: z.boolean().optional(),
 });
 

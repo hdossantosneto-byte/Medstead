@@ -5,10 +5,12 @@ import { Button } from "./ui";
 
 const links = [
   { href: "/orders", label: "Orders & Packages" },
+  { href: "/shop-and-ship", label: "Shop & Ship" },
   { href: "/freight", label: "Ship now" },
   { href: "/track", label: "Track package" },
   { href: "/rewards", label: "Rewards" },
   { href: "/warehouse", label: "US warehouse" },
+  { href: "/telehealth", label: "Telehealth" },
   { href: "/contact", label: "Support" },
 ];
 

@@ -1,6 +1,6 @@
 import { DedicatedNextButton } from "@/components/next-queue";
 import { Badge, Card, PageHeader } from "@/components/ui";
-import { CORRIDOR_LABEL, CORRIDOR_LIVE, FLIGHT_PHASE_LABEL } from "@/lib/constants";
+import { AIRCRAFT_ROUTING, CORRIDOR_LABEL, CORRIDOR_LIVE, FLIGHT_PHASE_LABEL } from "@/lib/constants";
 import { loadQueue } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
@@ -70,7 +70,30 @@ export default async function FlightsPage() {
             </p>
           </Card>
         ))}
+        <Card className="p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-display text-2xl text-navy-900">Mexico corridor</p>
+            <Badge tone="amber">Not live yet</Badge>
+          </div>
+          <p className="mt-2 text-sm text-navy-800/70">
+            Label only. Del does not dispatch Mexico from this board yet.
+          </p>
+        </Card>
       </div>
+
+      <Card className="mt-4 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
+          Aircraft routing
+        </p>
+        <ul className="mt-3 space-y-2 text-sm text-navy-800">
+          {AIRCRAFT_ROUTING.map((r) => (
+            <li key={r.kind} className="flex justify-between gap-3">
+              <span>{r.kind}</span>
+              <span className="text-navy-800/60">{r.route}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <Card className="mt-4 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">Flight-day</p>

@@ -6,7 +6,7 @@ import { runNextAction } from "@/lib/actions";
 import type { QueueItem, QueueKind } from "@/lib/queue";
 import { Button, Card, inputClass } from "@/components/ui";
 
-export function NextQueue({ items }: { items: QueueItem[] }) {
+export function NextQueue({ items, hero }: { items: QueueItem[]; hero?: boolean }) {
   if (items.length === 0) {
     return (
       <Card className="p-10 text-center">
@@ -20,14 +20,14 @@ export function NextQueue({ items }: { items: QueueItem[] }) {
 
   return (
     <div className="space-y-4">
-      {items.map((item) => (
-        <QueueCard key={item.id} item={item} />
+      {items.map((item, i) => (
+        <QueueCard key={item.id} item={item} hero={hero && i === 0} />
       ))}
     </div>
   );
 }
 
-function QueueCard({ item }: { item: QueueItem }) {
+function QueueCard({ item, hero }: { item: QueueItem; hero?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -50,20 +50,21 @@ function QueueCard({ item }: { item: QueueItem }) {
       gate: item.gate,
       date: item.needsDate ? date : undefined,
       flightId: item.flightId,
+      quoteId: item.quoteId,
     });
     setBusy(false);
     if (res && "error" in res && res.error) {
       setError(res.error);
       return;
     }
-    router.push("/app");
+    router.push(item.href.startsWith("/app/ops") || item.href.startsWith("/app/flights") ? item.href : "/app");
     router.refresh();
   }
 
   return (
-    <Card className="p-6">
+    <Card className={hero ? "border-2 border-navy-900 p-7" : "p-6"}>
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">{item.who}</p>
-      <h2 className="mt-2 font-display text-2xl text-navy-900">{item.what}</h2>
+      <h2 className={`mt-2 font-display text-navy-900 ${hero ? "text-3xl" : "text-2xl"}`}>{item.what}</h2>
       <p className="mt-2 text-sm leading-6 text-navy-800/70">{item.why}</p>
       {item.needsDate && (
         <input
@@ -74,7 +75,11 @@ function QueueCard({ item }: { item: QueueItem }) {
         />
       )}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button onClick={go} disabled={busy || (item.needsDate && !date)} className="min-h-tap w-full sm:w-auto">
+        <Button
+          onClick={go}
+          disabled={busy || (item.needsDate && !date)}
+          className={`min-h-tap w-full sm:w-auto ${hero ? "min-h-14 text-base" : ""}`}
+        >
           {busy ? "Working…" : item.actionLabel}
         </Button>
         <a href={item.href} className="text-sm font-semibold text-teal-800 hover:underline">
@@ -95,6 +100,7 @@ export function DedicatedNextButton({
   clinicId,
   crmId,
   flightId,
+  quoteId,
   gate,
 }: {
   kind: QueueKind;
@@ -105,6 +111,7 @@ export function DedicatedNextButton({
   clinicId?: string;
   crmId?: string;
   flightId?: string;
+  quoteId?: string;
   gate?: import("@prisma/client").GateName;
 }) {
   const router = useRouter();
@@ -127,6 +134,7 @@ export function DedicatedNextButton({
             clinicId,
             crmId,
             flightId,
+            quoteId,
             gate,
           });
           setBusy(false);

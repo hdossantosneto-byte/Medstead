@@ -22,8 +22,8 @@ export default async function CatalogPage({
     <div>
       <PageHeader
         eyebrow="Shop"
-        title={`${user.clinic.name} catalog`}
-        lede={`${MARKET_LABEL[user.clinic.market]} price book. Prices include delivery within 7 days to the clinic. International Non-RX minimum is 20 units. USA Non-RX volume book starts at qty 100.`}
+        title={`${user.clinic.name}`}
+        lede={`Search, add to cart, place order. ${MARKET_LABEL[user.clinic.market]} book. Prices include delivery within 7 days.`}
       />
       <Notice>
         DEMO prices are labeled on purpose — they are not official wholesale. Sourced international

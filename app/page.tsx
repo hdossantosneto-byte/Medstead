@@ -6,6 +6,7 @@ import {
   CONTACT_ORDERS,
   HUBS,
   MISSION,
+  PLATFORM_LINE,
   PUBLIC_LINE,
   TAGLINE,
   WAREHOUSE,
@@ -119,6 +120,7 @@ export default function HomePage() {
       <section className="mx-auto mt-12 max-w-6xl px-4">
         <div className="rounded-3xl bg-navy-900 px-8 py-10 text-white">
           <h2 className="font-display text-3xl">For licensed healthcare businesses</h2>
+          <p className="mt-3 text-sm font-semibold text-forest-300">{PLATFORM_LINE}</p>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
             We coordinate pharmacy, telehealth, medical-supply, and logistics. Clinic, doctor, and
             pharmacy accounts stay inactive until a MedStead admin approves them. Sales
