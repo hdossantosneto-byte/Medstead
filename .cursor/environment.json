@@ -1,0 +1,11 @@
+{
+  "name": "MedStead",
+  "install": "if [ -f package.json ]; then { [ -f .env ] || { [ -f .env.example ] && cp .env.example .env; }; }; npm install; if [ -f prisma/schema.prisma ]; then npx prisma db push --skip-generate && npm run db:seed --if-present; fi; else echo 'No package.json on this revision (e.g. the docs-only main branch); skipping Node app setup.'; fi",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "if [ -f package.json ]; then npm run dev; else echo 'No Node app on this revision; nothing to serve.'; sleep infinity; fi"
+    }
+  ],
+  "ports": [3000]
+}
