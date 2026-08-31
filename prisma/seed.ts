@@ -11,7 +11,7 @@ import {
 import bcrypt from "bcryptjs";
 import { loadLegalIntlRows } from "./legal-catalog";
 import { CLINIC_DRIVES_SHIPMENT, publicClockOn } from "../lib/handoff";
-import { CURRENT_FLEET_ASSIGN, PAYING_ENTITY, PAY_METHOD_ZELLE } from "../lib/constants";
+import { CALL_CENTER_SOURCE, CURRENT_FLEET_ASSIGN, PAYING_ENTITY, PAY_METHOD_ZELLE } from "../lib/constants";
 
 const prisma = new PrismaClient();
 const PASSWORD = "demo1234";
@@ -955,7 +955,7 @@ async function main() {
         destination: "NAS",
         notes: "Dispatch of a rescue organ trip. Clock on. No patient identifiers.",
         urgency: "ORGAN_CLOCK",
-        source: "call_center",
+        source: CALL_CENTER_SOURCE,
         routedTo: "DEL",
         flightId: rescueFlight.id,
       },
@@ -991,7 +991,7 @@ async function main() {
       destination: "NAS",
       notes: "Carton waiting at FLL. No patient identifiers.",
       urgency: "URGENT",
-      source: "call_center",
+      source: CALL_CENTER_SOURCE,
       routedTo: "DEL",
       flightId: phoneCargo.id,
     },

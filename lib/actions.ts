@@ -17,9 +17,11 @@ import {
   GATE_LABEL,
   GATE_ORDER,
   SHIPMENT_STATUSES,
+  CALL_CENTER_SOURCE,
   CURRENT_FLEET_ASSIGN,
   WELCOME_POINTS,
 } from "./constants";
+import { parseReceivedAt } from "./call-center";
 import { fleetLine } from "./fleet";
 import { prisma } from "./prisma";
 import { unitPriceForQty } from "./pricing";
@@ -947,27 +949,36 @@ function normalizeCallEnum<T extends string>(raw: string | undefined, allowed: r
   return (allowed as readonly string[]).includes(v) ? (v as T) : null;
 }
 
-export async function ingestCall(input: {
-  callerName: string;
-  callerPhone: string;
-  callerOrg?: string;
-  callType: string;
-  origin?: string;
-  destination: string;
-  notes?: string;
-  urgency: string;
-  source?: string;
-}) {
-  const actor = await requireRole(["MEDSTEAD_ADMIN", "OPS", "SALES"]);
+export async function persistIncomingCall(
+  input: {
+    callerName: string;
+    callerPhone: string;
+    callbackPhone?: string;
+    callerOrg?: string;
+    callType: string;
+    origin?: string;
+    destination: string;
+    notes?: string;
+    urgency?: string;
+    source?: string;
+    receivedAt?: string;
+  },
+  actorId?: string | null,
+) {
   const callerName = input.callerName.trim();
   const callerPhone = input.callerPhone.trim();
+  const callbackPhone = input.callbackPhone?.trim() || null;
   const dest = input.destination.trim().toUpperCase();
   const callType = normalizeCallEnum(input.callType, CALL_TYPES);
-  const urgency = normalizeCallEnum(input.urgency, CALL_URGENCIES);
+  const urgencyRaw =
+    input.urgency?.trim() || (input.callType.toLowerCase().replace(/-/g, "_") === "organ_rescue" ? "organ_clock" : "urgent");
+  const urgency = normalizeCallEnum(urgencyRaw, CALL_URGENCIES);
   if (!callType) return { error: "Unknown call type." };
   if (!urgency) return { error: "Unknown urgency." };
   if (!callerName || !callerPhone) return { error: "Caller name and phone are required. No patient identifiers." };
   if (!dest) return { error: "Destination is required." };
+  const received = parseReceivedAt(input.receivedAt);
+  if (received && typeof received === "object" && "error" in received) return received;
   const corridor = corridorForDest(dest);
   if (!corridor) return { error: "Pick NAS, FPO, or MSY. Mexico / MSY stay labeled not live." };
   const live = corridor === "FLL_NAS" || corridor === "FLL_FPO";
@@ -994,11 +1005,11 @@ export async function ingestCall(input: {
       goNoGo: rescue || tripType === "MEDICAL_CARGO" ? "GO" : null,
       origin,
       destination: dest,
-      requestedById: actor.id,
+      requestedById: actorId || undefined,
       passengerNote: `${org} · phone origin. No patient name.`,
       purpose: notes || `${tripType.replaceAll("_", " ")} from call center.`,
       timeCritical: rescue,
-      clockStartedAt: rescue ? new Date() : null,
+      clockStartedAt: rescue ? (received as Date) : null,
       custodyNote: rescue ? "Chain of custody open · phone intake · in-app only." : null,
       temperatureNote: rescue ? "Temperature note from the call. No patient identifiers." : null,
       assignedPilotId: (await defaultPilotId()) ?? undefined,
@@ -1011,15 +1022,17 @@ export async function ingestCall(input: {
 
   const call = await prisma.callLog.create({
     data: {
+      receivedAt: received as Date,
       callerName,
       callerPhone,
+      callbackPhone,
       callerOrg: input.callerOrg?.trim() || null,
       callType,
       origin,
       destination: dest,
       notes: notes || null,
       urgency,
-      source: input.source?.trim() || "call_center",
+      source: input.source?.trim() || CALL_CENTER_SOURCE,
       routedTo: "DEL",
       flightId: flight.id,
     },
@@ -1027,6 +1040,23 @@ export async function ingestCall(input: {
 
   revalidateApp();
   return { ok: true, callId: call.id, flightCode: flight.flightCode, flightId: flight.id };
+}
+
+export async function ingestCall(input: {
+  callerName: string;
+  callerPhone: string;
+  callbackPhone?: string;
+  callerOrg?: string;
+  callType: string;
+  origin?: string;
+  destination: string;
+  notes?: string;
+  urgency?: string;
+  source?: string;
+  receivedAt?: string;
+}) {
+  const actor = await requireRole(["MEDSTEAD_ADMIN", "OPS", "SALES"]);
+  return persistIncomingCall(input, actor.id);
 }
 
 async function writeSalesActivity(

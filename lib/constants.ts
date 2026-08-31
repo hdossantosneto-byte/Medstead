@@ -240,6 +240,9 @@ export const QUOTE_STATUS_LABEL: Record<string, string> = {
   APPROVED: "Approved",
 };
 
+export const CALL_CENTER_LINE = "+1 954-228-4551";
+export const CALL_CENTER_SOURCE = "+1-954-228-4551";
+
 export const AIR_ARM = "MTG Airlines";
 export const PART135_BANNER =
   "NOT LIVE / FUTURE 135. MTG Airlines is not a certificated Part 135 operator in this app. No certificate number is on file.";

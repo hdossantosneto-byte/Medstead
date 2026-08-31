@@ -502,20 +502,21 @@ model ExpenseReport {
 
 /// Phone intake from Call Center. No patient name, DOB, or MRN.
 model CallLog {
-  id          String      @id @default(cuid())
-  receivedAt  DateTime    @default(now())
-  callerName  String
-  callerPhone String
-  callerOrg   String?
-  callType    CallType
-  origin      String?
-  destination String
-  notes       String?
-  urgency     CallUrgency
-  source      String      @default("call_center")
-  routedTo    String      @default("DEL")
-  flightId    String?
-  flight      Flight?     @relation(fields: [flightId], references: [id])
+  id            String      @id @default(cuid())
+  receivedAt    DateTime    @default(now())
+  callerName    String
+  callerPhone   String
+  callbackPhone String?
+  callerOrg     String?
+  callType      CallType
+  origin        String?
+  destination   String
+  notes         String?
+  urgency       CallUrgency
+  source        String      @default("+1-954-228-4551")
+  routedTo      String      @default("DEL")
+  flightId      String?
+  flight        Flight?     @relation(fields: [flightId], references: [id])
 }
 
 /// Sales desk. Not the admin clinic-approval CRM. No revenue totals.
