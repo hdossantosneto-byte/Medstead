@@ -14,7 +14,7 @@ export const TAGLINE = "FASTER ACCESS. BETTER CARE.";
 export const PUBLIC_LINE =
   "We provide medicinal goods and care, and expedite them to hard to reach destinations.";
 export const MISSION =
-  "Ensure every community has access to the health care it deserves.";
+  "Our mission is to ensure every community has access to the health care it deserves.";
 export const CONTACT_ORDERS = "Orders@medsteadgroup.com";
 
 export const WAREHOUSE = {

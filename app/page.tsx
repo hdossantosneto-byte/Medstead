@@ -17,14 +17,13 @@ export default function HomePage() {
       <PublicNav />
       <section className="mx-auto max-w-6xl px-4 pb-8 pt-14 md:pt-20">
         <Badge tone="teal">USA and international clinic markets</Badge>
-        <h1 className="mt-4 max-w-3xl font-display text-4xl leading-tight text-navy-900 md:text-6xl">
-          MedStead
+        <h1 className="mt-5 max-w-4xl font-display text-3xl leading-tight text-navy-900 sm:text-4xl md:text-5xl">
+          {MISSION}
         </h1>
-        <p className="mt-3 text-sm font-semibold uppercase tracking-[0.22em] text-teal-700">
+        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.22em] text-teal-700">
           {TAGLINE}
         </p>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-navy-800/80">{PUBLIC_LINE}</p>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-navy-800/60">{MISSION}</p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button href="/freight">Get a freight quote</Button>
           <Button href="/track" variant="ghost">
@@ -36,7 +35,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-4 px-4 md:grid-cols-3">
+      <section className="mx-auto mt-4 max-w-6xl px-4">
+        <div className="rounded-3xl border border-teal-200 bg-teal-50 px-8 py-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
+            Connecting communities
+          </p>
+          <p className="mt-3 font-display text-2xl leading-snug text-navy-900 md:text-3xl">
+            {MISSION}
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-12 grid max-w-6xl gap-4 px-4 md:grid-cols-3">
         {[
           {
             title: "Express Air",

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CONTACT_ORDERS, HUBS, PUBLIC_LINE, TAGLINE, WAREHOUSE } from "@/lib/constants";
+import { CONTACT_ORDERS, HUBS, MISSION, PUBLIC_LINE, TAGLINE, WAREHOUSE } from "@/lib/constants";
 import { Wordmark } from "./brand";
 
 export function Footer() {
@@ -8,6 +8,9 @@ export function Footer() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-4">
         <div className="md:col-span-2">
           <Wordmark light href="/" />
+          <p className="mt-4 max-w-xl font-display text-xl leading-snug text-white">
+            {MISSION}
+          </p>
           <p className="mt-4 max-w-md text-sm leading-6 text-white/70">{PUBLIC_LINE}</p>
           <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-teal-300">
             {TAGLINE}
