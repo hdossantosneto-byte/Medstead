@@ -310,14 +310,6 @@ export const AIR_TRIP_STATUS_LABEL: Record<string, string> = {
   HOLD: "Hold",
 };
 
-export const AIRCRAFT_ROUTING = [
-  { kind: "Medical cargo", route: "FLL–NAS / FLL–FPO · Del dispatch" },
-  { kind: "Company travel", route: "MTG Airlines air arm · Del dispatch" },
-  { kind: "Personal goods", route: "On a company or chartered flight" },
-  { kind: "Doctor charter", route: "Passenger charter · not a clinic supply order" },
-  { kind: "Rescue / organ trip", route: "Time-critical dispatch · not an OPO / UNOS claim" },
-] as const;
-
 export const CUSTODY_LABEL: Record<string, string> = {
   SUBMITTED: "Submitted",
   COMPLIANCE_REVIEW: "Compliance review",

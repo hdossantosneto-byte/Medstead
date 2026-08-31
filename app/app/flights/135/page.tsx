@@ -52,10 +52,10 @@ export default async function Part135Page() {
         <p className="mt-3 text-sm leading-6 text-navy-800/70">{board.certificateNote}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge tone={board.onDemandCharter ? "green" : "amber"}>
-            On-demand charter {board.onDemandCharter ? "listed" : "placeholder"}
+            On-demand charter {board.onDemandCharter ? "listed" : "not live"}
           </Badge>
           <Badge tone={board.cargoOps ? "green" : "amber"}>
-            Cargo ops {board.cargoOps ? "listed" : "placeholder"}
+            Cargo ops {board.cargoOps ? "listed" : "not live"}
           </Badge>
         </div>
       </Card>
