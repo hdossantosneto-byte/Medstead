@@ -232,6 +232,24 @@ export async function loadQueue(user: {
         shipmentId: g.shipmentId,
       });
     }
+
+    const upcomingPays = await prisma.scheduledPay.findMany({
+      where: { status: "SCHEDULED", dueAt: { gte: new Date("2026-08-31") } },
+      include: { payee: true },
+      orderBy: { dueAt: "asc" },
+      take: 3,
+    });
+    for (const p of upcomingPays) {
+      items.push({
+        id: `paydate-${p.id}`,
+        who: p.payee.displayName,
+        what: `Review pay date ${p.dueAt.toISOString().slice(0, 10)}`,
+        why: "Scheduled / not sent. Books only — do not Zelle unless Hairson says so.",
+        actionLabel: "Open payroll",
+        kind: "open",
+        href: "/app/finance/payroll",
+      });
+    }
   }
 
   if (user.role === "OPS") {

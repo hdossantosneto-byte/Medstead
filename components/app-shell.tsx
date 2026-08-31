@@ -35,17 +35,19 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
       { href: "/app/admin/orders", label: "Orders" },
       { href: "/app/admin/invoices", label: "Invoices" },
       { href: "/app/admin/manifests", label: "Manifests" },
+      { href: "/app/finance/payroll", label: "Payroll" },
     );
   }
   if (role === "FINANCE") {
     base.push(
+      { href: "/app/finance/payroll", label: "Payroll" },
       { href: "/app/finance/quotes", label: "Quotes" },
       { href: "/app/finance/invoices", label: "Invoices" },
       { href: "/app/finance/payments", label: "Payments" },
       { href: "/app/finance/reports", label: "Reports" },
     );
   }
-  if (role === "MEDSTEAD_ADMIN" || role === "FINANCE") {
+  if (role === "MEDSTEAD_ADMIN") {
     base.push({ href: "/app/flights", label: "Flight ops" });
   }
   return base;

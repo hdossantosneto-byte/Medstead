@@ -361,3 +361,27 @@ model ShipmentSequence {
   id    String @id @default("global")
   lastN Int    @default(0)
 }
+
+/// Payee is not an employee. No employment type, W-2, or 1099.
+model Payee {
+  id          String          @id @default(cuid())
+  displayName String
+  roleLabel   String?
+  pays        ScheduledPay[]
+}
+
+/// Pay dates to track. Does not move money.
+model ScheduledPay {
+  id           String   @id @default(cuid())
+  payeeId      String
+  payee        Payee    @relation(fields: [payeeId], references: [id], onDelete: Cascade)
+  payingEntity String
+  amount       Float
+  currency     String   @default("USD")
+  dueAt        DateTime
+  method       String
+  status       String   @default("SCHEDULED")
+  recurring    Boolean  @default(false)
+  note         String?
+  createdAt    DateTime @default(now())
+}

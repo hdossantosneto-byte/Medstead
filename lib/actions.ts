@@ -33,6 +33,7 @@ function revalidateApp() {
   revalidatePath("/app/ops/packages");
   revalidatePath("/app/ops/orders");
   revalidatePath("/app/flights");
+  revalidatePath("/app/finance/payroll");
 }
 
 async function writeOrderActivity(
@@ -518,6 +519,19 @@ export async function setFlightPhase(flightId: string, phase: FlightPhase, goNoG
     },
   });
   void actor;
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function markScheduledPaySent(id: string) {
+  await requireRole(["FINANCE", "MEDSTEAD_ADMIN"]);
+  const row = await prisma.scheduledPay.findUnique({ where: { id } });
+  if (!row) return { error: "Pay date not found." };
+  if (row.status === "SENT") return { error: "Already marked sent." };
+  await prisma.scheduledPay.update({
+    where: { id },
+    data: { status: "SENT", note: row.note },
+  });
   revalidateApp();
   return { ok: true };
 }

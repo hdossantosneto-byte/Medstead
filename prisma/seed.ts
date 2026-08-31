@@ -71,6 +71,8 @@ function demoUsaIvPrice(intl: number) {
 }
 
 async function main() {
+  await prisma.scheduledPay.deleteMany();
+  await prisma.payee.deleteMany();
   await prisma.releaseGate.deleteMany();
   await prisma.statusEvent.deleteMany();
   await prisma.payment.deleteMany();
@@ -819,8 +821,58 @@ async function main() {
     throw new Error(`Expected 40+ legal IV/supply rows, parsed ${legal.length}`);
   }
 
+  const matias = await prisma.payee.create({
+    data: { displayName: "Matias" },
+  });
+  const murph = await prisma.payee.create({
+    data: {
+      displayName: "Derrick Murphy (Murph)",
+      roleLabel: "Director of Corporate Strategy / Communications",
+    },
+  });
+
+  const matiasDates = [
+    "2026-09-01",
+    "2026-09-15",
+    "2026-10-01",
+    "2026-10-15",
+    "2026-11-01",
+    "2026-11-15",
+    "2026-12-01",
+    "2026-12-15",
+  ];
+  for (const day of matiasDates) {
+    await prisma.scheduledPay.create({
+      data: {
+        payeeId: matias.id,
+        payingEntity: "MEDSTEAD LLC",
+        amount: 1500,
+        currency: "USD",
+        dueAt: new Date(`${day}T12:00:00.000Z`),
+        method: "Zelle · Chase ••9696",
+        status: "SCHEDULED",
+        recurring: true,
+        note: "Recurring 1st and 15th. Scheduled / not sent.",
+      },
+    });
+  }
+  await prisma.scheduledPay.create({
+    data: {
+      payeeId: murph.id,
+      payingEntity: "MEDSTEAD LLC",
+      amount: 3500,
+      currency: "USD",
+      dueAt: new Date("2026-09-05T12:00:00.000Z"),
+      method: "Zelle · Chase ••9696",
+      status: "SCHEDULED",
+      recurring: false,
+      note: "Pay date to track. Scheduled / not sent.",
+    },
+  });
+
+  const userCount = await prisma.user.count();
   console.log(
-    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, 8 users, clinics + CRM + orders.`,
+    `Seeded ${ivCount} IV, ${supplyCount} supplies, ${nonRxCount} DEMO Non-RX, ${userCount} users, clinics + CRM + orders + payroll dates.`,
   );
 }
 
