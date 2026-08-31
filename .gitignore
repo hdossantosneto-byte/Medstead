@@ -25,3 +25,12 @@ npm-debug.log*
 # typescript
 next-env.d.ts
 *.tsbuildinfo
+
+# Capacitor / Xcode junk (keep ios/App project files)
+ios/App/Pods
+ios/App/App/public
+ios/App/build
+ios/DerivedData
+ios/App/App.xcworkspace/xcuserdata
+ios/App/App.xcodeproj/xcuserdata
+*.xcuserstate

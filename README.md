@@ -104,6 +104,10 @@ Printable docs (signed-in): Commercial Invoice, Packing List, Air Waybill, Custo
 - USA IV rows are **DEMO** labeled (no matching sourced USA book except as noted in the spec).
 - Not seeded: testosterone, ivermectin, oxytocin, ketamine, hormone/estrogen compounds, clomiphene, tesofensine, fenbendazole, metformin, GLP-1 / peptides (Semaglutide, Tirzepatide, Retatrutide, Lilly, incretin).
 
+## iOS / App Store
+
+Native shell is Capacitor iOS (`com.medstead.app`). App Store is **in progress, not live**. See `APP_STORE.md`.
+
 ## Contact
 
 Orders@medsteadgroup.com
