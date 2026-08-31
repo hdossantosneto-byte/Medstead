@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { auth } from "@/lib/session";
+import { CartBadge } from "./cart-badge";
+import { NewOrderButton } from "./new-order-button";
 import { Wordmark } from "./brand";
 import { Button } from "./ui";
 
 const links = [
   { href: "/orders", label: "Orders & Packages" },
+  { href: "/freight", label: "Ship Now" },
+  { href: "/track", label: "Track Package" },
   { href: "/shop-and-ship", label: "Shop & Ship" },
-  { href: "/freight", label: "Ship now" },
-  { href: "/track", label: "Track package" },
-  { href: "/rewards", label: "Rewards" },
   { href: "/warehouse", label: "US warehouse" },
-  { href: "/telehealth", label: "Telehealth" },
   { href: "/contact", label: "Support" },
 ];
 
@@ -27,10 +27,9 @@ export async function PublicNav() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <Button href="/freight" variant="secondary" className="min-h-tap px-3 text-xs sm:text-sm">
-            + New order
-          </Button>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <CartBadge />
+          <NewOrderButton className="min-h-tap px-3 text-xs sm:text-sm" />
           {session?.user ? (
             <Button href="/app" variant="primary">
               Workspace
@@ -40,17 +39,6 @@ export async function PublicNav() {
           )}
         </div>
       </div>
-      <nav className="flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden">
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="min-h-tap shrink-0 rounded-full px-3 py-2 text-sm font-semibold text-navy-800 hover:bg-forest-50 hover:text-forest-800"
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }

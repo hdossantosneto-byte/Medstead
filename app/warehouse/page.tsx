@@ -1,3 +1,4 @@
+import { CopyAddress } from "@/components/copy-address";
 import { Footer } from "@/components/footer";
 import { PublicNav } from "@/components/public-nav";
 import { Card, PageHeader } from "@/components/ui";
@@ -47,6 +48,7 @@ export default async function WarehousePage() {
                 Sign in as a customer to see your assigned suite code (demo: MS-C15-1042).
               </p>
             )}
+            <CopyAddress name={user?.name} suite={user?.warehouseCode} />
           </Card>
           <Card className="p-8">
             <h2 className="font-display text-xl text-navy-900">How it works</h2>

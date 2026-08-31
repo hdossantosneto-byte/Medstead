@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { CONTACT_ORDERS, HUBS, MISSION, PUBLIC_LINE, TAGLINE, WAREHOUSE } from "@/lib/constants";
+import { PublicBottomNav } from "./public-bottom-nav";
 import { Wordmark } from "./brand";
 
 const SERVICES = [
   { href: "/orders", label: "Orders & Packages" },
   { href: "/shop-and-ship", label: "Shop & Ship" },
+  { href: "/freight", label: "Ship Now" },
+  { href: "/track", label: "Track Package" },
   { href: "/freight", label: "Express Air freight" },
   { href: "/freight", label: "Standard Sea freight" },
   { href: "/track", label: "Package tracking" },
@@ -75,13 +78,14 @@ export function Footer() {
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">{TAGLINE}</p>
         </div>
       </div>
-      <div className="border-t border-white/10 px-4 py-4 text-center text-xs text-white/40">
+      <div className="border-t border-white/10 px-4 py-4 pb-20 text-center text-xs text-white/40 lg:pb-4">
         <Link href="/demo" className="text-forest-300 hover:underline">
           Demo logins
         </Link>
         <span className="mx-2">·</span>
         MedStead · Markets in the USA and internationally
       </div>
+      <PublicBottomNav />
     </footer>
   );
 }

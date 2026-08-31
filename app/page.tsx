@@ -47,12 +47,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-12 grid max-w-6xl gap-4 px-4 md:grid-cols-3">
+      <section className="mx-auto mt-12 grid max-w-6xl gap-4 px-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
           {
             title: "Express Air",
             meta: "3–5 days after release",
-            body: "Priority air from Fort Lauderdale to clinic and consignee destinations. Public clock starts only after release — we do not advertise supplier lead time as transit time.",
+            body: "Priority air from Fort Lauderdale. Public clock starts only after release — we do not advertise supplier lead time as transit time.",
           },
           {
             title: "Standard Sea",
@@ -60,9 +60,24 @@ export default function HomePage() {
             body: "Cost-efficient ocean service for heavier clinic and personal freight. 10% off when you pay online.",
           },
           {
+            title: "Track package",
+            meta: "MS- IDs",
+            body: "Enter a package ID. Public clock starts after release. Del owns delivery dates.",
+          },
+          {
+            title: "Rewards",
+            meta: "1 point per $1",
+            body: "100 welcome points, then 1 point per dollar. Pay online and save 10%.",
+          },
+          {
+            title: "Customs",
+            meta: "Not a broker",
+            body: "MedStead is not a licensed customs broker. Duties and formal entry stay with the importer of record.",
+          },
+          {
             title: "My Clinic",
-            meta: "RX · Non-RX · IV",
-            body: "Licensed clinics, doctors, and pharmacies order against USA or international price books. Prices include delivery within 7 days to the clinic.",
+            meta: "USA and international books",
+            body: "Licensed clinics, doctors, and pharmacies order IV / supplies. Prices include delivery within 7 days.",
           },
         ].map((c) => (
           <Card key={c.title} className="p-6">
@@ -73,6 +88,23 @@ export default function HomePage() {
             <p className="mt-3 text-sm leading-6 text-navy-800/70">{c.body}</p>
           </Card>
         ))}
+      </section>
+
+      <section className="mx-auto mt-8 max-w-6xl px-4">
+        <Card className="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
+              My Clinic
+            </p>
+            <p className="mt-1 font-display text-2xl text-navy-900">Register or sign in to order</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button href="/clinic-signup/demo">Register</Button>
+            <Button href="/login" variant="ghost">
+              Clinic login
+            </Button>
+          </div>
+        </Card>
       </section>
 
       <section className="mx-auto mt-12 max-w-6xl px-4">

@@ -24,6 +24,12 @@ export const metadata: Metadata = {
   description: PUBLIC_LINE,
   keywords: ["MedStead", "clinic supply", "medical freight", TAGLINE],
   icons: { icon: [{ url: "/medstead-logo.svg", type: "image/svg+xml" }, { url: "/favicon.svg" }] },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "MedStead",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

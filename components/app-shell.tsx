@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { CLINIC_ROLES, ROLE_LABEL } from "@/lib/constants";
 import { Wordmark } from "./brand";
+import { CartBadge } from "./cart-badge";
 import { OpsBottomNav } from "./ops-bottom-nav";
 import { SignOutButton } from "./sign-out-button";
 
@@ -11,17 +12,18 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
   const base: NavItem[] = [{ href: "/app", label: "Do this next" }];
   if (role === "PUBLIC" || role === "CUSTOMER") {
     base.push(
-      { href: "/orders", label: "Orders & Packages" },
+      { href: "/app/orders", label: "Orders & Packages" },
       { href: "/shop-and-ship", label: "Shop & Ship" },
-      { href: "/freight", label: "New order" },
+      { href: "/freight", label: "Ship Now" },
       { href: "/app/customer", label: "Your orders" },
-      { href: "/track", label: "Track package" },
+      { href: "/track", label: "Track Package" },
     );
   }
   if (CLINIC_ROLES.includes(role)) {
     if (clinicOk) {
       base.push(
         { href: "/app/clinic/catalog", label: "Shop" },
+        { href: "/app/orders", label: "Orders & Packages" },
         { href: "/app/clinic/orders", label: "Your orders" },
       );
     } else {
@@ -77,6 +79,7 @@ export function AppShell({
           <p className="hidden text-xs font-medium text-navy-800/60 sm:block">
             {name} · {ROLE_LABEL[role]}
           </p>
+          {(role === "CLINIC_ADMIN" || role === "DOCTOR" || role === "PHARMACY") && <CartBadge />}
           <SignOutButton />
         </div>
         {items.length > 0 && (

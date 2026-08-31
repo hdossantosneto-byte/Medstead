@@ -113,6 +113,62 @@ export async function placeClinicOrder(form: {
   return { ok: true, id: order.id };
 }
 
+export async function requestClinicInvite(form: {
+  token: string;
+  name: string;
+  email: string;
+  clinicName: string;
+  country: string;
+  city: string;
+}) {
+  const email = form.email.toLowerCase().trim();
+  if (!email || !form.name.trim() || !form.clinicName.trim()) {
+    return { error: "Name, email, and clinic are required." };
+  }
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return { error: "That email already has a seat. Sign in." };
+
+  const bcrypt = (await import("bcryptjs")).default;
+  const passwordHash = await bcrypt.hash("demo1234", 10);
+  const clinic = await prisma.clinic.create({
+    data: {
+      name: form.clinicName.trim(),
+      country: form.country.trim() || "USA",
+      city: form.city.trim() || "Fort Lauderdale",
+      market: form.country.trim().toUpperCase() === "USA" ? "USA" : "INTL",
+      type: "Clinic",
+      approved: false,
+      address: "Pending",
+      contactEmail: email,
+      licenseNote: `Invite token ${form.token}`,
+      activityLine: "Invite received · waiting on Clint to approve. Seat stays inactive.",
+    },
+  });
+  await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      name: form.name.trim(),
+      role: "CLINIC_ADMIN",
+      active: false,
+      clinicId: clinic.id,
+    },
+  });
+  await prisma.crmAccount.create({
+    data: {
+      name: clinic.name,
+      kind: "Clinic",
+      market: clinic.market,
+      country: clinic.country,
+      stage: "ELIGIBILITY_REVIEW",
+      clinicId: clinic.id,
+      activityLine: "Invite landing · no patient data.",
+    },
+  });
+  revalidateApp();
+  return { ok: true };
+}
+
 export async function approveClinic(clinicId: string, approve: boolean) {
   const admin = await requireRole(["MEDSTEAD_ADMIN"]);
   const line = approve

@@ -1,5 +1,6 @@
 import { Footer } from "@/components/footer";
 import { PublicNav } from "@/components/public-nav";
+import { SupportForm } from "@/components/support-form";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { CONTACT_ORDERS, HUBS, WAREHOUSE } from "@/lib/constants";
 
@@ -38,6 +39,9 @@ export default function ContactPage() {
               {CONTACT_ORDERS}
             </a>
             <p className="mt-2 text-sm leading-6 text-navy-800/70">{WAREHOUSE.line}</p>
+            <div className="mt-6">
+              <SupportForm />
+            </div>
           </Card>
           <Card className="p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
