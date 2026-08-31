@@ -44,7 +44,20 @@ export function Button({
     styles,
     className,
   );
-  if (href && !disabled) return <Link href={href} className={cls}>{children}</Link>;
+  if (href && !disabled) {
+    if (href.startsWith("http")) {
+      return (
+        <a href={href} className={cls}>
+          {children}
+        </a>
+      );
+    }
+    return (
+      <Link href={href} className={cls}>
+        {children}
+      </Link>
+    );
+  }
   return (
     <button type={type ?? "button"} className={cls} disabled={disabled} onClick={onClick}>
       {children}

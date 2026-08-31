@@ -1,34 +1,58 @@
 import { Footer } from "@/components/footer";
+import { CtaButton, Eyebrow, GetStartedCta, Section } from "@/components/marketing";
 import { PublicNav } from "@/components/public-nav";
-import { Button, Card, PageHeader } from "@/components/ui";
+import { CONTACT_ORDERS } from "@/lib/constants";
 
-export const metadata = { title: "Telehealth partners" };
+export const metadata = {
+  title: "Telehealth",
+  description: "Telehealth is coming soon. MedStead does not book appointments on this site.",
+};
 
 export default function TelehealthPage() {
   return (
-    <div>
+    <div className="bg-white">
       <PublicNav />
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <PageHeader
-          eyebrow="Partners"
-          title="Telehealth"
-          lede="MedStead does not schedule visits in this app. Licensed telehealth is a partner redirect from your clinic."
-        />
-        <Card className="p-8">
-          <p className="text-sm leading-6 text-navy-800/70">
-            Ask your clinic which licensed partner they use. Completing care there does not put
-            patient records in the MedStead CRM.
+
+      <section className="bg-navy-950 text-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <p className="inline-flex rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+            Coming soon
           </p>
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Button href="/contact" className="min-h-tap">
-              Continue to support
-            </Button>
-            <Button href="/orders" variant="ghost" className="min-h-tap">
-              Orders & Packages
-            </Button>
+          <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+            Telehealth is not live.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-white/75">
+            We do not schedule visits or hold an appointment calendar on this website. When
+            telehealth opens, it will be announced here.
+          </p>
+        </div>
+      </section>
+
+      <Section className="py-20">
+        <article className="mx-auto max-w-2xl rounded-3xl border border-navy-900/8 bg-white p-8 shadow-tile">
+          <Eyebrow>Status</Eyebrow>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-navy-950">
+            Coming soon — nothing to book.
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-navy-800/70">
+            If you need cargo moved today, use Freight. If you have a clinic question, email{" "}
+            <a href={`mailto:${CONTACT_ORDERS}`} className="font-semibold text-forest-700">
+              {CONTACT_ORDERS}
+            </a>
+            .
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <GetStartedCta />
+            <CtaButton href="/clinics" variant="outline">
+              Clinics
+            </CtaButton>
+            <CtaButton href="/contact" variant="outline">
+              Contact
+            </CtaButton>
           </div>
-        </Card>
-      </div>
+        </article>
+      </Section>
+
       <Footer />
     </div>
   );

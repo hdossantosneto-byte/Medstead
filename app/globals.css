@@ -12,12 +12,12 @@ body {
 }
 
 body {
-  @apply bg-sand text-ink antialiased;
+  @apply bg-white text-ink antialiased;
 }
 
 ::selection {
-  background: #c8e6c9;
-  color: #002147;
+  background: #dcfce7;
+  color: #060f22;
 }
 
 .wordmark {
