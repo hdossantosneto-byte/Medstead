@@ -1,5 +1,98 @@
-# MedStead
+# MedStead storefront
 
-Production app for MedStead freight and clinic supply.
+**FASTER ACCESS. BETTER CARE.**
 
-FASTER ACCESS. BETTER CARE.
+Customer-facing freight booking for **MedStead** (MEDSTEAD LLC). A customer can book a shipment from a phone, get a confirmation and tracking ID, and pay later by invoice. Ops updates tracking in `/ops`.
+
+This is **not** the company OS (airline dispatch, CRM, accounting, WMS). Those live on other open PRs and are unfinished. Public brand is **MedStead**. Do not treat a verbal 135 / organ-network claim as live.
+
+## Why this repo, not Bolt or Squarespace
+
+| Surface | URL | Role |
+| --- | --- | --- |
+| **This app** | Deploy wherever you host Next.js | Checkout / book / track. Replaces Bolt. |
+| Bolt stand-in | https://go.medsteadtransport.com | Temporary site because Hairson does not code. Retire it after this app is live. |
+| Squarespace | https://www.medsteadgroup.com | Company marketing door only. Not checkout. Do not put booking there. |
+
+**Do not change live DNS from this repo.** When you are ready, attach `medsteadtransport.com` (and `www` / `go` if you want) at the host — see below.
+
+## What v1 does
+
+- Home, services, account, book a shipment (from/to, cargo, timing), confirmation, tracking
+- Services: Express Air 3–5 days, Standard Sea 5–7 days, Freeport & Nassau pickup, customs support, live tracking
+- Bahamas freight is a product, not the only product. Hard-to-reach medical transport uses the same form
+- Request + confirmation + invoice / pay later. **No card is charged.** A payment rail can be attached later — do not invent Stripe keys
+- Ops desk (`/ops`) can confirm, issue an invoice, mark pay-later or paid offline, and push tracking events
+- Contact: [Orders@medsteadgroup.com](mailto:Orders@medsteadgroup.com)
+- Official Transport lockup (globe / ship / plane / truck, green cross in the D)
+- Navy `#060F22`, green `#16A34A` / `#22C55E`, blue `#2563EB`, Inter
+- No Semaglutide, Tirzepatide, GLP-1, peptides, Lilly, or drug catalog
+
+## Run locally
+
+Need Node 18+.
+
+```bash
+cp .env.example .env
+npm install
+npm run db:setup
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+| Path | What |
+| --- | --- |
+| `/` | Home |
+| `/services` | Services |
+| `/book` | Book a shipment |
+| `/book/confirm/[code]` | Confirmation |
+| `/track` and `/track/[code]` | Tracking |
+| `/account` | Signup / login / my bookings |
+| `/support` | Orders desk |
+| `/ops` | Internal tracking + invoice (PIN from `.env`) |
+
+Demo customer (README only — not shown on public pages): `customer@medstead.demo` / `storefront1234`  
+Demo tracking ID: `MS-20260820-FLL-NAS-0001`  
+Local ops PIN: `local-ops` (change `OPS_PIN` before any public deploy)
+
+Production build:
+
+```bash
+npm run build
+npm start
+```
+
+## How this replaces Bolt
+
+1. Run this app on any Node host (Vercel, Railway, a VPS, etc.).
+2. Walk the phone flow: account → book → confirmation → track. Use `/ops` to move status so tracking looks live.
+3. When Hairson is happy, point `medsteadtransport.com` at this host (see next section). Leave Squarespace on `medsteadgroup.com`.
+4. After DNS cuts over, retire https://go.medsteadtransport.com. Until then Bolt can stay up.
+
+## Attach `medsteadtransport.com` later (do not change DNS now)
+
+This app does not edit registrar or DNS settings.
+
+When you are ready:
+
+1. Deploy this repo to HTTPS.
+2. At the DNS host for `medsteadtransport.com`, add the records the platform gives you (usually an A/ALIAS for apex and a CNAME for `www`).
+3. Add `medsteadtransport.com` and `www.medsteadtransport.com` as custom domains on the host. Set `SESSION_SECRET` and a new `OPS_PIN` in the host env. Never commit those values.
+4. Optional: keep `go.medsteadtransport.com` as a CNAME to the same app until Bolt is turned off.
+5. Leave https://www.medsteadgroup.com on Squarespace.
+
+## Payments later
+
+V1 uses `lib/payments.ts` (`invoice_pay_later`). When a real rail is ready, add the provider keys to the **host** environment and implement checkout there. Do not put Stripe (or any) secret keys in this repo.
+
+## Stack
+
+Next.js 14 App Router, TypeScript, Tailwind, Prisma + SQLite, signed httpOnly cookies. No NextAuth, no Capacitor, no clinic catalog.
+
+## Legal / brand
+
+- Brand spelling: **MedStead** (never MeadStead)
+- MedStead is not a licensed customs broker
+- Warehouse: WareSpace – MedStead, 700 NW 57th Ct, Unit C15, Fort Lauderdale, FL 33309
+- Keep MTG Airlines unlabeled as live
