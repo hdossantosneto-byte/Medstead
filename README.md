@@ -27,13 +27,15 @@ This is **not** the company OS (airline dispatch, CRM, accounting, WMS). Those l
 - Official Transport lockup (globe / ship / plane / truck, green cross in the D)
 - Navy `#060F22`, green `#16A34A` / `#22C55E`, blue `#2563EB`, Inter
 - No Semaglutide, Tirzepatide, GLP-1, peptides, Lilly, or drug catalog
+- Prisma + PostgreSQL (Vercel / Neon / Prisma Postgres). Not SQLite.
 
 ## Run locally
 
-Need Node 18+.
+Need Node 18+ and a PostgreSQL URL (`DATABASE_URL`). SQLite is not used — Vercel serverless cannot persist a local `.db` file.
 
 ```bash
-cp .env.example .env
+npx create-db@latest          # free Prisma Postgres; claim the URL it prints
+cp .env.example .env          # paste DATABASE_URL; keep OPS_PIN=local-ops for staging
 npm install
 npm run db:setup
 npm run dev
@@ -88,7 +90,31 @@ V1 uses `lib/payments.ts` (`invoice_pay_later`). When a real rail is ready, add 
 
 ## Stack
 
-Next.js 14 App Router, TypeScript, Tailwind, Prisma + SQLite, signed httpOnly cookies. No NextAuth, no Capacitor, no clinic catalog.
+Next.js 14 App Router, TypeScript, Tailwind, Prisma + PostgreSQL, signed httpOnly cookies. No NextAuth, no Capacitor, no clinic catalog.
+
+## HTTPS staging (Vercel, no live DNS)
+
+Do **not** attach `medsteadtransport.com`, `www`, or `go`. Live freight DNS stays on Bolt.
+
+This app must be a **full Next.js** deploy (Node serverless), not a static export. Book and track write/read Postgres via `/api/bookings` and `/track/[code]`.
+
+On the Vercel project (Hobby/free is fine):
+
+1. `vercel login` (Hairson’s account that claimed the temp deploy), then from this repo:
+   ```bash
+   vercel link
+   vercel env add DATABASE_URL
+   vercel env add SESSION_SECRET
+   vercel env add OPS_PIN
+   vercel --prod
+   ```
+   Or in the dashboard: Settings → Environment Variables, then Redeploy. Do not invent tokens — only Hairson can log in.
+2. `DATABASE_URL` — claimed Prisma Postgres / Vercel Postgres / Neon.
+3. `SESSION_SECRET` — `openssl rand -base64 48`
+4. `OPS_PIN` — staging uses `local-ops`
+5. After the DB URL is set, run `npm run db:setup` against that URL (from a laptop with the same `.env`) so demo codes exist.
+
+Demo track code after seed: `MS-20260820-FLL-NAS-0001`. Ops PIN: `local-ops`.
 
 ## Legal / brand
 
