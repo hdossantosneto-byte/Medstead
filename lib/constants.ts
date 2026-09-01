@@ -343,6 +343,142 @@ export const DESTINATIONS = [
   { code: "MSY", name: "New Orleans, USA" },
 ];
 
+export const PICKUP_POINTS = [
+  { id: "NASSAU", label: "Nassau pickup" },
+  { id: "FREEPORT", label: "Freeport pickup" },
+  { id: "ADDRESS", label: "Deliver to an address" },
+  { id: "WAREHOUSE", label: "Hold at Fort Lauderdale warehouse" },
+] as const;
+
+export const PICKUP_LABEL: Record<string, string> = {
+  NASSAU: "Nassau pickup",
+  FREEPORT: "Freeport pickup",
+  ADDRESS: "Deliver to an address",
+  WAREHOUSE: "Hold at Fort Lauderdale warehouse",
+};
+
+export const PUBLIC_FREIGHT_SERVICES = [
+  {
+    id: "EXPRESS_AIR",
+    title: "Express Air",
+    badge: "Fastest",
+    window: "3–5 days after release",
+    blurb: "Priority air freight for time-sensitive medical and personal cargo.",
+  },
+  {
+    id: "STANDARD_SEA",
+    title: "Standard Sea",
+    badge: "Best value",
+    window: "5–7 days after release",
+    blurb: "Cost-effective ocean freight for bulky or heavy shipments.",
+  },
+  {
+    id: "PICKUP",
+    title: "Pickup points",
+    badge: "Freeport & Nassau",
+    window: "Island pickup",
+    blurb: "Convenient pickup across Freeport and Nassau. Hours confirmed by ops.",
+  },
+  {
+    id: "CUSTOMS",
+    title: "Customs support",
+    badge: "Help included",
+    window: "Documentation",
+    blurb: "Duty estimates and clearance assistance. MedStead is not a licensed customs broker.",
+  },
+  {
+    id: "TRACKING",
+    title: "Live tracking",
+    badge: "24/7",
+    window: "Warehouse to door",
+    blurb: "Status updates from WareSpace C15 to your destination.",
+  },
+  {
+    id: "REWARDS",
+    title: "Rewards",
+    badge: "1 pt / $1",
+    window: "100 welcome points",
+    blurb: "Earn on booked freight. Pay-later invoices are first-class — no card is charged here.",
+  },
+] as const;
+
+export const HOW_IT_WORKS = [
+  {
+    step: "01",
+    title: "Create account",
+    body: "Sign up and get a personal receiving address at WareSpace C15 in Fort Lauderdale.",
+  },
+  {
+    step: "02",
+    title: "Book a shipment",
+    body: "Tell us from/to, cargo, and timing. You get a confirmation and tracking ID — no card is charged.",
+  },
+  {
+    step: "03",
+    title: "Ship to FL",
+    body: "Send packages to WareSpace – MedStead, 700 NW 57th Ct, Unit C15, or ask us to coordinate pickup.",
+  },
+  {
+    step: "04",
+    title: "We deliver",
+    body: "MedStead forwards the shipment. Track it here. Ops emails an invoice you can pay later.",
+  },
+] as const;
+
+/** Customer-facing track ladder. Ops still uses the 11-status machine internally. */
+export const PUBLIC_TRACK_STEPS = [
+  "REQUESTED",
+  "CONFIRMED",
+  "INVOICE_ISSUED",
+  "PAID",
+  "RECEIVED",
+  "IN_TRANSIT",
+  "CUSTOMS",
+  "READY_PICKUP",
+  "DELIVERED",
+] as const;
+
+export type PublicTrackStep = (typeof PUBLIC_TRACK_STEPS)[number];
+
+export const PUBLIC_TRACK_LABEL: Record<PublicTrackStep, string> = {
+  REQUESTED: "Requested",
+  CONFIRMED: "Confirmed",
+  INVOICE_ISSUED: "Invoice issued — pay later",
+  PAID: "Payment received",
+  RECEIVED: "Received at warehouse",
+  IN_TRANSIT: "In transit",
+  CUSTOMS: "Customs",
+  READY_PICKUP: "Ready for pickup",
+  DELIVERED: "Delivered",
+};
+
+export const INVOICE_STATUS_LABEL: Record<string, string> = {
+  none: "No invoice yet",
+  issued: "Invoice issued",
+  pay_later: "Pay later",
+  paid: "Paid",
+};
+
+export const CHARTER_CTA = "Request a charter";
+export const CHARTER_BROKER_LINE =
+  "Request a charter is a brokered request — not an operating-airline booking. Part 91 now; Part 135 is subcontracted and not live in this app.";
+
+export const FORBIDDEN_CARGO_TERMS = [
+  "semaglutide",
+  "tirzepatide",
+  "retatrutide",
+  "lilly",
+  "incretin",
+  "glp-1",
+  "glp1",
+  "peptide",
+  "trt",
+  "bhrt",
+];
+
+export const CARGO_REJECT_MESSAGE =
+  "This storefront does not accept that cargo type. Contact Orders@medsteadgroup.com.";
+
 export const FORBIDDEN_SKU_TERMS = [
   "semaglutide",
   "tirzepatide",
@@ -369,4 +505,6 @@ export const FORBIDDEN_SKU_TERMS = [
   "progesterone",
   "dhea",
   "hormone",
+  "trt",
+  "bhrt",
 ];

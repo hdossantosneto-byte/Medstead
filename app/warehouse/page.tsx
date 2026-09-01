@@ -17,7 +17,7 @@ export default async function WarehousePage() {
   return (
     <div>
       <PublicNav />
-      <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-10 pb-28">
         <PageHeader
           eyebrow="Fort Lauderdale hub"
           title="Personal US warehouse address"

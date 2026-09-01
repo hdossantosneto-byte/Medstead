@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { CLINIC_ROLES, ROLE_LABEL } from "@/lib/constants";
+import { isDel } from "@/lib/org";
 import { Wordmark } from "./brand";
 import { CartBadge } from "./cart-badge";
 import { OpsBottomNav } from "./ops-bottom-nav";
@@ -37,7 +38,7 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
         { href: "/app/clinic/catalog", label: "Shop" },
         { href: "/app/orders", label: "Orders & Packages" },
         { href: "/app/clinic/orders", label: "Your orders" },
-        { href: "/app/clinic/charter", label: "Doctor charter" },
+        { href: "/app/clinic/charter", label: "Request a charter" },
       );
     } else {
       base.push({ href: "/app/clinic/pending", label: "Approval status" });
@@ -77,11 +78,13 @@ function navFor(role: Role, clinicOk: boolean): NavItem[] {
 export function AppShell({
   role,
   name,
+  email,
   clinicOk,
   children,
 }: {
   role: Role;
   name: string;
+  email?: string | null;
   clinicOk: boolean;
   children: React.ReactNode;
 }) {
@@ -115,7 +118,7 @@ export function AppShell({
         )}
       </header>
       <main className={`mx-auto max-w-6xl px-4 py-6 ${ops || pilot || sales ? "pb-28" : "pb-10"}`}>{children}</main>
-      {ops && <OpsBottomNav />}
+      {ops && <OpsBottomNav del={isDel({ email, name })} />}
       {pilot && <PilotBottomNav />}
       {sales && <SalesBottomNav />}
     </div>

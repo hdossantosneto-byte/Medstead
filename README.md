@@ -4,9 +4,9 @@
 
 We provide medicinal goods and care, and expedite them to hard to reach destinations.
 
-MedStead (never MeadStead) is a single web app for public freight, My Clinic B2B supply, admin CRM, medication operations, and finance. USA and international clinics see different price books. Fort Lauderdale is the active hub (Nassau, Freeport, Miami). Next: Gulf Coast / New Orleans, then Jamaica and the wider Caribbean.
+MedStead (never MeadStead) is the **owned** company OS: public freight booking/track/cart, staff ops + MTG Airlines dispatch, clinic B2B (signed-in only), CRM, and finance. Live customer freight still sits on Bolt (`go.medsteadtransport.com`) until a later cutover. This app is not published to customer DNS from this branch.
 
-MedStead is **not** a licensed customs broker.
+MedStead is **not** a licensed customs broker. Request a charter is a brokered request — not an operating-airline booking. Part 135 is not live.
 
 ## Stack
 
@@ -19,12 +19,15 @@ MedStead is **not** a licensed customs broker.
 ```bash
 cp .env.example .env
 npm install
+npx prisma generate
 npx prisma db push
 npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Production build:
+Open [http://localhost:3000](http://localhost:3000).
+
+Production build (required to pass):
 
 ```bash
 npm run build
@@ -32,6 +35,15 @@ npm start
 ```
 
 One-step database setup: `npm run db:setup`.
+
+### What to click first (Bolt successor paths)
+
+1. Phone-width window: Home → **Book a shipment** (`/freight`) → confirmation → **Track**
+2. Guest cargo that mentions Semaglutide / peptide is rejected
+3. `/ops` with PIN `local-ops` — issue invoice / set In transit, refresh the public track page
+4. `/demo` as Del — **Dispatch** bottom tab → `/app/flights` board
+
+Honest remaining Bolt-only work: [docs/BOLT_CUTOVER.md](docs/BOLT_CUTOVER.md).
 
 ## Demo logins
 
@@ -89,7 +101,7 @@ Finance cannot ship. Ops cannot see invoice totals. Sales/admin cannot set deliv
 
 ## What to try
 
-1. Public: `/orders` (Orders & Packages), `/freight` quote, `/track/MS-20260820-FLL-NAS-0001`.
+1. Public: `/` freight door, `/freight` book → confirm, `/services`, `/cart`, `/account`, `/track/MS-20260820-FLL-NAS-0001`.
 2. `/demo` as Del, doctor, finance, admin — each home is a next-action queue.
 3. Approved clinic: `/app/clinic/catalog` — search, categories, cart, place an order.
 4. Customer: rewards (100 welcome + 1 pt / $1) and WareSpace C15, 700 NW 57th Ct, Fort Lauderdale, FL 33309.

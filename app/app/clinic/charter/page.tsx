@@ -23,14 +23,14 @@ export default async function ClinicCharterPage() {
     <div>
       <PageHeader
         eyebrow={AIR_ARM}
-        title="Charter a flight"
-        lede="Passenger charter for a doctor or clinic — not a clinic supply order. Del owns dispatch. No invoice totals on this screen."
+        title="Request a charter"
+        lede="Passenger charter for a doctor or clinic — not a clinic supply order. Brokered request, not an operating-airline booking. Del owns dispatch. No invoice totals on this screen."
       />
       <Card className="p-5">
         <AirTripForm
           tripTypes={["DOCTOR_CHARTER"]}
-          title="Request a doctor charter"
-          lede="Del schedules. Finance cannot fly. No WhatsApp."
+          title="Request a charter"
+          lede="Del schedules. Finance cannot fly. No WhatsApp. Brokered request — not an operating-airline booking."
         />
       </Card>
       <Card className="mt-4 p-5">

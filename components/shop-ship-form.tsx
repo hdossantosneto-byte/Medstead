@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { DESTINATIONS, SERVICE_WINDOW, WAREHOUSE } from "@/lib/constants";
+import { useRouter } from "next/navigation";
+import { CARGO_REJECT_MESSAGE, DESTINATIONS, SERVICE_WINDOW, WAREHOUSE } from "@/lib/constants";
+import { forbiddenCargoMatch } from "@/lib/cargo";
 import { createFreightQuote } from "@/lib/actions";
 import { money } from "@/lib/format";
 import { Button, Card, Field, inputClass, Notice } from "@/components/ui";
 
 export function ShopShipForm({ signedIn }: { signedIn: boolean }) {
+  const router = useRouter();
   const [retailerUrl, setRetailerUrl] = useState("");
   const [description, setDescription] = useState("");
   const [destination, setDestination] = useState("NAS");
@@ -33,6 +36,10 @@ export function ShopShipForm({ signedIn }: { signedIn: boolean }) {
       setError("Paste a US retailer link or describe the package.");
       return;
     }
+    if (forbiddenCargoMatch(`${description} ${retailerUrl}`)) {
+      setError(CARGO_REJECT_MESSAGE);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -48,9 +55,19 @@ export function ShopShipForm({ signedIn }: { signedIn: boolean }) {
       });
       if ("error" in res && res.error) {
         setError(String(res.error));
+        setBusy(false);
+        return;
+      }
+      if (!("ok" in res) || !res.ok) {
+        setError("Could not start Shop & Ship. Sign in and try again.");
+        setBusy(false);
         return;
       }
       setResult(res);
+      if (res.shipmentCode) {
+        router.push(`/freight/confirm/${res.shipmentCode}`);
+        return;
+      }
     } catch {
       setError("Could not start Shop & Ship. Sign in and try again.");
     }

@@ -12,7 +12,7 @@ export default async function ShopAndShipPage() {
   return (
     <div>
       <PublicNav />
-      <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-10 pb-28">
         <PageHeader
           eyebrow="Shop & Ship"
           title="Send a US parcel to WareSpace C15"
