@@ -58,6 +58,11 @@ export function ShopShipForm({ signedIn }: { signedIn: boolean }) {
         setBusy(false);
         return;
       }
+      if (!("ok" in res) || !res.ok) {
+        setError("Could not start Shop & Ship. Sign in and try again.");
+        setBusy(false);
+        return;
+      }
       setResult(res);
       if (res.shipmentCode) {
         router.push(`/freight/confirm/${res.shipmentCode}`);

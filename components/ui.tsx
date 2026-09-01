@@ -5,12 +5,14 @@ import { clsx } from "@/lib/format";
 export function Card({
   children,
   className,
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
-    <div className={clsx("rounded-2xl border border-navy-900/8 bg-white shadow-card", className)}>
+    <div id={id} className={clsx("rounded-2xl border border-navy-900/8 bg-white shadow-card", className)}>
       {children}
     </div>
   );
