@@ -4,7 +4,7 @@
 
 Customer-facing freight booking for **MedStead** (MEDSTEAD LLC). A customer can book a shipment from a phone, get a confirmation and tracking ID, and pay later by invoice. Ops updates tracking in `/ops`.
 
-This is **not** the company OS (airline dispatch, CRM, accounting, WMS). Those live on other open PRs and are unfinished. Public brand is **MedStead**. Do not treat a verbal 135 / organ-network claim as live.
+This is **not** the company OS (airline dispatch, CRM, accounting, WMS). Those live on other open PRs and are unfinished. Public brand is **MedStead**. Staging this week is freight book/track only — do not surface an airline or charter product. If the airline name is mentioned at all, it is **MTG Airways** (never STEADAIR, never “MTG Airlines”). No Part 135 operating claims. Background only, if needed: Part 91 + subcontracted 135.
 
 ## Why this repo, not Bolt or Squarespace
 
@@ -96,7 +96,7 @@ Next.js 14 App Router, TypeScript, Tailwind, Prisma + PostgreSQL, signed httpOnl
 
 Do **not** attach `medsteadtransport.com`, `www`, or `go`. Live freight DNS stays on Bolt.
 
-This app must be a **full Next.js** deploy (Node serverless), not a static export. Book and track write/read Postgres via `/api/bookings` and `/track/[code]`.
+This app must be a **full Next.js** deploy (Node serverless), not a static export. Book and track write/read Postgres via `/api/bookings` and `/track/[code]`. This week’s staging is that freight desk only — no airline/charter product, no STEADAIR, no Part 135 operating claims.
 
 On the Vercel project (Hobby/free is fine):
 
@@ -121,4 +121,4 @@ Demo track code after seed: `MS-20260820-FLL-NAS-0001`. Ops PIN: `local-ops`.
 - Brand spelling: **MedStead** (never MeadStead)
 - MedStead is not a licensed customs broker
 - Warehouse: WareSpace – MedStead, 700 NW 57th Ct, Unit C15, Fort Lauderdale, FL 33309
-- Keep MTG Airlines unlabeled as live
+- Airline name if mentioned at all: **MTG Airways** (never STEADAIR). Not a live airline/charter product on this storefront. No Part 135 operating claims.
