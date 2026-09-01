@@ -6,10 +6,10 @@ import { clsx } from "@/lib/format";
 
 const TABS = [
   { href: "/", label: "Home", match: (p: string) => p === "/" },
-  { href: "/freight", label: "Ship", match: (p: string) => p.startsWith("/freight") || p.startsWith("/ship") || p.startsWith("/shop-and-ship") },
+  { href: "/freight", label: "Ship", match: (p: string) => p.startsWith("/freight") || p.startsWith("/ship") || p.startsWith("/book") || p.startsWith("/shop-and-ship") || p.startsWith("/services") },
   { href: "/track", label: "Track", match: (p: string) => p.startsWith("/track") },
-  { href: "/orders", label: "Orders", match: (p: string) => p.startsWith("/orders") || p.startsWith("/cart") },
-  { href: "/contact", label: "Support", match: (p: string) => p.startsWith("/contact") },
+  { href: "/cart", label: "Cart", match: (p: string) => p.startsWith("/cart") },
+  { href: "/account", label: "Account", match: (p: string) => p.startsWith("/account") || p.startsWith("/orders") || p.startsWith("/login") || p.startsWith("/signup") },
 ];
 
 export function PublicBottomNav() {

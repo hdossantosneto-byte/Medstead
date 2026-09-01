@@ -95,6 +95,41 @@ export default async function FlightsPage() {
         }
       />
 
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+        <a href="#fleet" className="min-h-tap shrink-0 rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white">
+          Fleet
+        </a>
+        <a href="#ready" className="min-h-tap shrink-0 rounded-full bg-white px-4 py-2 text-sm font-semibold text-navy-900 ring-1 ring-navy-900/15">
+          Ready cargo
+        </a>
+        {TRIP_ORDER.map((type) => (
+          <a
+            key={type}
+            href={`#trip-${type}`}
+            className="min-h-tap shrink-0 rounded-full bg-white px-4 py-2 text-sm font-semibold text-navy-900 ring-1 ring-navy-900/15"
+          >
+            {TRIP_TYPE_LABEL[type]}
+          </a>
+        ))}
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {CORRIDORS.map((c) => (
+          <Card key={c} className="p-3">
+            <p className="text-sm font-semibold text-navy-900">{CORRIDOR_LABEL[c]}</p>
+            {CORRIDOR_LIVE[c] ? (
+              <Badge tone="green">Live</Badge>
+            ) : (
+              <Badge tone="amber">Not live</Badge>
+            )}
+          </Card>
+        ))}
+        <Card className="p-3">
+          <p className="text-sm font-semibold text-navy-900">Mexico</p>
+          <Badge tone="amber">Not live</Badge>
+        </Card>
+      </div>
+
       <Card className="mb-4 border-amber-200 bg-amber-50 p-4">
         <p className="text-sm leading-6 text-navy-800">{PART135_BANNER}</p>
       </Card>
@@ -112,32 +147,7 @@ export default async function FlightsPage() {
         </Card>
       )}
 
-      <div className="grid gap-3">
-        {CORRIDORS.map((c) => (
-          <Card key={c} className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-display text-2xl text-navy-900">{CORRIDOR_LABEL[c]}</p>
-              {CORRIDOR_LIVE[c] ? <Badge tone="green">Live</Badge> : <Badge tone="amber">Not live yet</Badge>}
-            </div>
-            <p className="mt-2 text-sm text-navy-800/70">
-              {c === "FLL_MSY"
-                ? "Gulf Coast / New Orleans is next. Listed on purpose — Del does not dispatch it yet."
-                : "FLL–NAS and FLL–FPO are live medical-cargo corridors."}
-            </p>
-          </Card>
-        ))}
-        <Card className="p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-display text-2xl text-navy-900">Mexico corridor</p>
-            <Badge tone="amber">Not live yet</Badge>
-          </div>
-          <p className="mt-2 text-sm text-navy-800/70">
-            Label only. Del does not dispatch Mexico from this board yet.
-          </p>
-        </Card>
-      </div>
-
-      <Card className="mt-4 p-5">
+      <Card id="fleet" className="mt-4 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
           Current fleet
         </p>
@@ -151,7 +161,9 @@ export default async function FlightsPage() {
 
       {del && (
         <div className="mt-8">
-          <h2 className="font-display text-2xl text-navy-900">Ready medical cargo</h2>
+          <h2 id="ready" className="font-display text-2xl text-navy-900">
+            Ready medical cargo
+          </h2>
           <p className="mt-1 text-sm text-navy-800/60">
             One package, one button. The clinic doctor does not need to be on the phone.
           </p>
@@ -200,7 +212,9 @@ export default async function FlightsPage() {
         if (rows.length === 0) return null;
         return (
           <div key={type} className="mt-8 space-y-3">
-            <h2 className="font-display text-2xl text-navy-900">{TRIP_TYPE_LABEL[type]}</h2>
+            <h2 id={`trip-${type}`} className="font-display text-2xl text-navy-900">
+              {TRIP_TYPE_LABEL[type]}
+            </h2>
             {type === "RESCUE_ORGAN" && (
               <p className="text-sm text-navy-800/60">
                 TIME-CRITICAL dispatch of a rescue organ trip. Not an organ procurement organization

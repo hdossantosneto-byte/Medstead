@@ -336,6 +336,13 @@ model FreightQuote {
   onlineAmount Float
   description String?
   retailerUrl String?
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  pickupPoint  String?
+  destAddress  String?
+  readyDate    String?
+  originMode   String?
   status      String         @default("UNDER_REVIEW")
   createdAt   DateTime       @default(now())
   shipment    Shipment?
@@ -359,6 +366,16 @@ model Shipment {
   consignee     String
   description   String?
   retailerUrl   String?
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  pickupPoint   String?
+  destAddress   String?
+  readyDate     String?
+  originMode    String?
+  invoiceStatus String         @default("none")
+  invoiceUsd    Float?
+  invoiceRef    String?
   publicClock   Boolean        @default(false)
   activityLine  String?
   promisedDate  DateTime?

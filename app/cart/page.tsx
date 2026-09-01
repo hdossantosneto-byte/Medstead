@@ -1,6 +1,7 @@
 import { Footer } from "@/components/footer";
 import { PublicNav } from "@/components/public-nav";
 import { CartClient } from "@/components/cart-client";
+import { FreightCartClient } from "@/components/freight-cart-client";
 import { PageHeader } from "@/components/ui";
 import { CLINIC_ROLES } from "@/lib/constants";
 import { auth } from "@/lib/session";
@@ -19,9 +20,24 @@ export default async function CartPage() {
         <PageHeader
           eyebrow="Cart"
           title="Your cart"
-          lede="Add from the clinic book, then place the order. Freight Shop & Ship is a separate path."
+          lede="Freight bookings live here for everyone. Clinic supply is a separate signed-in book — never on the public catalog."
         />
-        <CartClient canOrder={canOrder} />
+        <div className="grid gap-6">
+          <FreightCartClient
+            contact={{
+              name: session?.user?.name ?? undefined,
+              email: session?.user?.email ?? undefined,
+            }}
+          />
+          {canOrder && (
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-forest-700">
+                Clinic book (signed-in)
+              </p>
+              <CartClient canOrder={canOrder} />
+            </div>
+          )}
+        </div>
       </div>
       <Footer />
     </div>

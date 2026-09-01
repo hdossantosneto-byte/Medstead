@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Empty, inputClass } from "@/components/ui";
 import { CATEGORY_LABEL } from "@/lib/constants";
+import { forbiddenSkuMatch } from "@/lib/cargo";
 import { money } from "@/lib/format";
 import { placeClinicOrder } from "@/lib/actions";
 import { readCart, writeCart } from "@/lib/clinic-cart";
@@ -85,9 +86,11 @@ export function CatalogClient({
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
+      const hay = `${p.name} ${p.sku} ${p.strength ?? ""} ${p.form ?? ""} ${p.description ?? ""}`;
+      if (forbiddenSkuMatch(hay)) return false;
       if (!matchesTab(p.category, active)) return false;
       if (!q) return true;
-      return `${p.name} ${p.sku} ${p.strength ?? ""} ${p.form ?? ""}`.toLowerCase().includes(q);
+      return hay.toLowerCase().includes(q);
     });
   }, [products, active, query]);
 

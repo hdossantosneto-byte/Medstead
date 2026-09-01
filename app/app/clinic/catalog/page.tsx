@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Badge, Notice, PageHeader } from "@/components/ui";
 import { MARKET_LABEL } from "@/lib/constants";
+import { forbiddenSkuMatch } from "@/lib/cargo";
 import { prisma } from "@/lib/prisma";
 import { clinicApproved, requireUser } from "@/lib/session";
 import { CatalogClient } from "@/components/catalog-client";
@@ -37,7 +38,9 @@ export default async function CatalogPage({
       <CatalogClient
         market={user.clinic.market}
         tab={searchParams.tab ?? "IV"}
-        products={products.map((p) => ({
+        products={products
+          .filter((p) => !forbiddenSkuMatch(`${p.name} ${p.sku} ${p.description ?? ""}`))
+          .map((p) => ({
           id: p.id,
           sku: p.sku,
           name: p.name,

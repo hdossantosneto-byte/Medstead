@@ -437,7 +437,20 @@ export async function createFreightQuote(input: {
   description?: string;
   retailerUrl?: string;
   createShipment?: boolean;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  pickupPoint?: string;
+  destAddress?: string;
+  readyDate?: string;
+  originMode?: string;
 }) {
+  const { cargoFieldsHit } = await import("./cargo");
+  const { CARGO_REJECT_MESSAGE } = await import("./constants");
+  if (cargoFieldsHit(input.description, input.retailerUrl, input.destAddress)) {
+    return { error: CARGO_REJECT_MESSAGE };
+  }
+
   const session = await auth();
   const sessionUser = session?.user?.id
     ? await prisma.user.findUnique({ where: { id: session.user.id } })
@@ -445,6 +458,7 @@ export async function createFreightQuote(input: {
   const { quoteFreight } = await import("./pricing");
   const amounts = quoteFreight(input);
   const count = await prisma.freightQuote.count();
+  const contactName = input.contactName?.trim() || sessionUser?.name || "Guest";
   const quote = await prisma.freightQuote.create({
     data: {
       quoteNumber: `FQ-${2400 + count + 1}`,
@@ -458,12 +472,19 @@ export async function createFreightQuote(input: {
       onlineAmount: amounts.onlineAmount,
       description: input.description,
       retailerUrl: input.retailerUrl,
+      contactName,
+      contactEmail: input.contactEmail,
+      contactPhone: input.contactPhone,
+      pickupPoint: input.pickupPoint,
+      destAddress: input.destAddress,
+      readyDate: input.readyDate,
+      originMode: input.originMode,
       status: "UNDER_REVIEW",
     },
   });
 
   let shipmentCode: string | undefined;
-  if (input.createShipment && sessionUser) {
+  if (input.createShipment !== false) {
     const code = await nextShipmentCode(input.origin, input.destination);
     await prisma.shipment.create({
       data: {
@@ -474,16 +495,30 @@ export async function createFreightQuote(input: {
         destination: input.destination,
         weightLb: input.weightLb,
         pieces: input.pieces,
-        customerId: sessionUser.id,
+        customerId: sessionUser?.id,
         quoteId: quote.id,
-        consignee: sessionUser.name,
+        consignee: contactName,
         description: input.description,
         retailerUrl: input.retailerUrl,
+        contactName,
+        contactEmail: input.contactEmail,
+        contactPhone: input.contactPhone,
+        pickupPoint: input.pickupPoint,
+        destAddress: input.destAddress,
+        readyDate: input.readyDate,
+        originMode: input.originMode,
+        invoiceStatus: "none",
         gates: { create: GATE_ORDER.map((name) => ({ name })) },
-        events: { create: { toStatus: "QUOTED", actorId: sessionUser.id, note: "Quoted · under review" } },
+        events: {
+          create: {
+            toStatus: "QUOTED",
+            actorId: sessionUser?.id,
+            note: "Booked · no card charged · quote under review",
+          },
+        },
       },
     });
-    if (sessionUser.role === "CUSTOMER" || sessionUser.role === "PUBLIC") {
+    if (sessionUser && (sessionUser.role === "CUSTOMER" || sessionUser.role === "PUBLIC")) {
       await prisma.user.update({
         where: { id: sessionUser.id },
         data: { rewardsPoints: { increment: Math.floor(amounts.listAmount) } },
@@ -496,6 +531,7 @@ export async function createFreightQuote(input: {
   revalidatePath("/shop-and-ship");
   revalidatePath("/app/customer");
   revalidatePath("/app/finance/quotes");
+  revalidatePath("/ops");
   return {
     ok: true,
     quoteId: quote.id,
@@ -526,6 +562,78 @@ export async function approveFreightQuote(quoteId: string) {
       "Finance approved quote · waiting on origin receive at C15.",
     );
   }
+  revalidateApp();
+  return { ok: true };
+}
+
+export async function updateFreightInvoice(input: {
+  shipmentCode: string;
+  action: "issue_invoice" | "pay_later" | "mark_paid";
+  amountUsd?: number;
+}) {
+  const actor = await requireRole(["FINANCE", "MEDSTEAD_ADMIN", "OPS"]);
+  const shipment = await prisma.shipment.findUnique({
+    where: { shipmentCode: input.shipmentCode },
+    include: { quote: true },
+  });
+  if (!shipment) return { error: "Shipment not found." };
+  const { issuePayLaterInvoice } = await import("./freight-payments");
+  const amount = input.amountUsd ?? shipment.invoiceUsd ?? shipment.quote?.listAmount ?? 0;
+  if (input.action === "issue_invoice") {
+    const issued = issuePayLaterInvoice(shipment.shipmentCode, amount);
+    await prisma.shipment.update({
+      where: { id: shipment.id },
+      data: {
+        invoiceStatus: issued.invoiceStatus,
+        invoiceRef: issued.invoiceRef,
+        invoiceUsd: issued.invoiceUsd,
+      },
+    });
+    await prisma.statusEvent.create({
+      data: {
+        shipmentId: shipment.id,
+        fromStatus: shipment.status,
+        toStatus: shipment.status,
+        note: issued.note,
+        actorId: actor.id,
+      },
+    });
+  } else if (input.action === "pay_later") {
+    await prisma.shipment.update({
+      where: { id: shipment.id },
+      data: { invoiceStatus: "pay_later", invoiceUsd: amount },
+    });
+    await prisma.statusEvent.create({
+      data: {
+        shipmentId: shipment.id,
+        fromStatus: shipment.status,
+        toStatus: shipment.status,
+        note: "Pay later — invoice stays open. No card charged.",
+        actorId: actor.id,
+      },
+    });
+  } else {
+    await prisma.shipment.update({
+      where: { id: shipment.id },
+      data: { invoiceStatus: "paid", invoiceUsd: amount },
+    });
+    if (shipment.status === "QUOTED" || shipment.status === "SUBMITTED") {
+      await advanceShipment(shipment.id, "APPROVED_PAID", actor.id, "Freight invoice marked paid.");
+    } else {
+      await prisma.statusEvent.create({
+        data: {
+          shipmentId: shipment.id,
+          fromStatus: shipment.status,
+          toStatus: shipment.status,
+          note: "Freight invoice marked paid.",
+          actorId: actor.id,
+        },
+      });
+    }
+  }
+  revalidatePath(`/track/${shipment.shipmentCode}`);
+  revalidatePath(`/freight/confirm/${shipment.shipmentCode}`);
+  revalidatePath("/ops");
   revalidateApp();
   return { ok: true };
 }

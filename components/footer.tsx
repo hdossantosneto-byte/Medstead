@@ -1,19 +1,19 @@
 import Link from "next/link";
-import { CONTACT_ORDERS, HUBS, MISSION, PUBLIC_LINE, TAGLINE, WAREHOUSE } from "@/lib/constants";
+import { CHARTER_BROKER_LINE, CHARTER_CTA, CONTACT_ORDERS, HUBS, MISSION, PUBLIC_LINE, TAGLINE, WAREHOUSE } from "@/lib/constants";
 import { PublicBottomNav } from "./public-bottom-nav";
 import { Wordmark } from "./brand";
 
 const SERVICES = [
+  { href: "/services", label: "All services" },
   { href: "/orders", label: "Orders & Packages" },
   { href: "/shop-and-ship", label: "Shop & Ship" },
-  { href: "/freight", label: "Ship Now" },
+  { href: "/freight", label: "Book a shipment" },
   { href: "/track", label: "Track Package" },
   { href: "/freight", label: "Express Air freight" },
   { href: "/freight", label: "Standard Sea freight" },
-  { href: "/track", label: "Package tracking" },
   { href: "/warehouse", label: "US warehouse" },
   { href: "/rewards", label: "Rewards program" },
-  { href: "/telehealth", label: "Telehealth partners" },
+  { href: "/account", label: "Account" },
 ];
 
 const QUICK = [
@@ -76,6 +76,10 @@ export function Footer() {
             MedStead is not a licensed customs broker. We coordinate pharmacy, telehealth,
             medical-supply, and logistics for licensed healthcare businesses.
           </p>
+          <p className="mt-3 text-xs leading-5 text-white/45">{CHARTER_BROKER_LINE}</p>
+          <Link href="/app/clinic/charter" className="mt-3 block text-sm text-forest-300 hover:text-forest-200">
+            {CHARTER_CTA}
+          </Link>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-forest-300">{TAGLINE}</p>
         </div>
       </div>

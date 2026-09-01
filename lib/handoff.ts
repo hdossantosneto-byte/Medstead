@@ -195,7 +195,7 @@ export async function advanceClinicOrder(
 export async function advanceShipment(
   shipmentId: string,
   status: ShipmentStatus,
-  actorId: string,
+  actorId: string | null,
   line: string,
 ) {
   const shipment = await prisma.shipment.findUnique({
@@ -218,7 +218,7 @@ export async function advanceShipment(
       fromStatus: shipment.status,
       toStatus: status,
       note: line,
-      actorId,
+      actorId: actorId || undefined,
     },
   });
 
@@ -235,7 +235,7 @@ export async function advanceShipment(
           fromStatus: shipment.clinicOrder.status,
           toStatus: nextClinic,
           note: line,
-          actorId,
+          actorId: actorId || undefined,
         },
       });
     } else {

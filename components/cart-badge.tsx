@@ -3,19 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CART_EVENT, cartCount, readCart } from "@/lib/clinic-cart";
+import { FREIGHT_CART_EVENT, freightCartCount, readFreightCart } from "@/lib/freight-cart";
 
 export function CartBadge() {
   const [n, setN] = useState(0);
 
   useEffect(() => {
     function sync() {
-      setN(cartCount(readCart()));
+      setN(cartCount(readCart()) + freightCartCount(readFreightCart()));
     }
     sync();
     window.addEventListener(CART_EVENT, sync);
+    window.addEventListener(FREIGHT_CART_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener(CART_EVENT, sync);
+      window.removeEventListener(FREIGHT_CART_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);

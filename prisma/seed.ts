@@ -744,6 +744,10 @@ async function main() {
         clinicOrderId: opts.clinicOrderId,
         consignee: opts.clinicOrderId ? "Bethel Medical" : "Marcus Reed",
         description: "Demo freight / clinic movement",
+        pickupPoint: opts.dest === "FPO" ? "FREEPORT" : "NASSAU",
+        invoiceStatus: opts.status === "IN_TRANSIT" ? "issued" : "none",
+        invoiceRef: opts.status === "IN_TRANSIT" ? `INV-${opts.code}` : undefined,
+        invoiceUsd: opts.status === "IN_TRANSIT" ? 248.5 : undefined,
         publicClock: opts.publicClock ?? opts.status !== "SUBMITTED",
         activityLine:
           opts.status === "ORIGIN_RECEIVED_HOLD"
