@@ -42,7 +42,10 @@ import bcrypt from "bcryptjs";
 import { DESTINATIONS, FORBIDDEN_CARGO_TERMS, ORIGINS, WAREHOUSE } from "../lib/constants";
 
 const FREIGHT_FILES = ["customers.csv", "shipments.csv", "quotes.csv"] as const;
-const DEFERRED_FILES = ["clinic_accounts.csv", "clinic_orders.csv", "employees.csv"] as const;
+const CANONICAL_CLINIC_FILES = ["clinic_accounts.csv", "clinic_orders.csv"] as const;
+const EMPLOYEES_FILE = "employees.csv";
+
+type SkipTally = { file: string; rows: number; present: boolean; kind: "clinic" | "employees" | "other" };
 
 const ADMIN_ROLES = new Set([
   "admin",
@@ -658,19 +661,84 @@ function planQuotes(rows: Row[], shipments: PlannedBooking[], flags: Flag[]) {
   return bookings;
 }
 
-function logDeferred(dir: string) {
-  for (const file of DEFERRED_FILES) {
-    if (existsSync(join(dir, file))) {
-      console.log(`skip  ${file} — clinic/employee data is out of freight staging scope (deferred).`);
+function csvDataRows(dir: string, file: string): { present: boolean; rows: number } {
+  const path = join(dir, file);
+  if (!existsSync(path)) return { present: false, rows: 0 };
+  // Read-only. Never unlink, rewrite, or move backup CSVs — clinic_* stay for a later clinics table.
+  return { present: true, rows: parseCsv(readFileSync(path, "utf8")).length };
+}
+
+function collectSkipped(dir: string): SkipTally[] {
+  const tallies: SkipTally[] = [];
+  const seen = new Set<string>();
+  const names = existsSync(dir) ? readdirSync(dir) : [];
+
+  const clinicSeen = new Set<string>(CANONICAL_CLINIC_FILES);
+  const clinicNames = [
+    ...CANONICAL_CLINIC_FILES,
+    ...names.filter((n) => /^clinic_.*\.csv$/i.test(n) && !clinicSeen.has(n)),
+  ];
+  for (const file of clinicNames) {
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const { present, rows } = csvDataRows(dir, file);
+    tallies.push({ file, rows, present, kind: "clinic" });
+  }
+
+  const emp = csvDataRows(dir, EMPLOYEES_FILE);
+  tallies.push({ file: EMPLOYEES_FILE, rows: emp.rows, present: emp.present, kind: "employees" });
+  seen.add(EMPLOYEES_FILE);
+
+  const known = new Set<string>([...FREIGHT_FILES, ...Array.from(seen)]);
+  for (const name of names) {
+    if (!name.toLowerCase().endsWith(".csv") || known.has(name)) continue;
+    const { present, rows } = csvDataRows(dir, name);
+    tallies.push({ file: name, rows, present, kind: "other" });
+  }
+  return tallies;
+}
+
+function printCounts(opts: {
+  mode: Mode;
+  usersImported: number;
+  usersUpserted: number;
+  bookingsImported: number;
+  bookingsUpserted: number;
+  skipped: SkipTally[];
+}) {
+  const { mode, usersImported, usersUpserted, bookingsImported, bookingsUpserted, skipped } = opts;
+  console.log("");
+  console.log("=== counts ===");
+  if (mode === "dry-run") {
+    const users = usersImported + usersUpserted;
+    const bookings = bookingsImported + bookingsUpserted;
+    console.log(`users                imported/upserted=${users}  (dry-run; no DB write)`);
+    console.log(`bookings             imported/upserted=${bookings}  (dry-run; no DB write)`);
+  } else {
+    console.log(`users                imported=${usersImported}  upserted=${usersUpserted}`);
+    console.log(`bookings             imported=${bookingsImported}  upserted=${bookingsUpserted}`);
+  }
+  const clinic = skipped.filter((s) => s.kind === "clinic");
+  const employees = skipped.find((s) => s.kind === "employees");
+  const other = skipped.filter((s) => s.kind === "other");
+  if (!clinic.length) {
+    console.log("clinic_*             skipped=0  (no clinic_*.csv present; nothing dropped)");
+  } else {
+    for (const s of clinic) {
+      const kept = s.present
+        ? `${s.rows} row(s) skipped — file kept for later clinics table`
+        : "not present";
+      console.log(`${s.file.padEnd(21)} skipped=${s.present ? s.rows : 0}  (${kept})`);
     }
   }
-  const known = new Set<string>([...FREIGHT_FILES, ...DEFERRED_FILES]);
-  if (!existsSync(dir)) return;
-  for (const name of readdirSync(dir)) {
-    if (!name.toLowerCase().endsWith(".csv")) continue;
-    if (!known.has(name)) {
-      console.log(`skip  ${name} — unknown CSV (freight importer reads customers/shipments/quotes only).`);
-    }
+  if (employees) {
+    const kept = employees.present
+      ? `${employees.rows} row(s) skipped — file kept`
+      : "not present";
+    console.log(`${EMPLOYEES_FILE.padEnd(21)} skipped=${employees.present ? employees.rows : 0}  (${kept})`);
+  }
+  for (const s of other) {
+    console.log(`${s.file.padEnd(21)} skipped=${s.rows}  (unknown CSV; file kept)`);
   }
 }
 
@@ -818,11 +886,29 @@ async function main() {
   console.log(`IMPORT_DIR=${dir}`);
   if (!existsSync(dir)) {
     console.log("IMPORT_DIR does not exist. Create it and copy CSVs there (see docs/BOLT_TRANSPORT_IMPORT.md).");
+    printCounts({
+      mode,
+      usersImported: 0,
+      usersUpserted: 0,
+      bookingsImported: 0,
+      bookingsUpserted: 0,
+      skipped: collectSkipped(dir),
+    });
     if (mode === "apply") process.exit(1);
     return;
   }
 
-  logDeferred(dir);
+  const skipped = collectSkipped(dir);
+  for (const s of skipped) {
+    if (!s.present) continue;
+    if (s.kind === "clinic") {
+      console.log(`skip  ${s.file} — ${s.rows} row(s) left on disk for a later clinics table (not imported).`);
+    } else if (s.kind === "employees") {
+      console.log(`skip  ${s.file} — ${s.rows} row(s) left on disk (out of freight staging scope).`);
+    } else {
+      console.log(`skip  ${s.file} — ${s.rows} row(s); unknown CSV (freight importer reads customers/shipments/quotes only). File kept.`);
+    }
+  }
 
   const flags: Flag[] = [];
   const customerRows = readCsvIfPresent(dir, "customers.csv");
@@ -885,6 +971,14 @@ async function main() {
 
   if (mode === "dry-run") {
     console.log("\nDry-run complete. No database writes.");
+    printCounts({
+      mode,
+      usersImported: users.length,
+      usersUpserted: 0,
+      bookingsImported: bookings.length,
+      bookingsUpserted: 0,
+      skipped,
+    });
     console.log("Re-run with --apply to upsert User / Booking / TrackingEvent.");
     return;
   }
@@ -898,11 +992,16 @@ async function main() {
   const prisma = new PrismaClient({ datasources: { db: { url } } });
   try {
     const result = await applyImport(prisma, users, bookings);
-    console.log("\nApply complete:");
-    console.log(`  User            created=${result.usersCreated} updated=${result.usersUpdated}`);
-    console.log(`  Booking         created=${result.bookingsCreated} updated=${result.bookingsUpdated}`);
-    console.log(`  TrackingEvent   created=${result.eventsCreated}`);
-    console.log("  invoiceStatus / paymentProvider left as invoice_pay_later (no Stripe keys).");
+    console.log("\nApply complete. TrackingEvent created=" + result.eventsCreated + ".");
+    console.log("invoiceStatus / paymentProvider left as invoice_pay_later (no Stripe keys).");
+    printCounts({
+      mode,
+      usersImported: result.usersCreated,
+      usersUpserted: result.usersUpdated,
+      bookingsImported: result.bookingsCreated,
+      bookingsUpserted: result.bookingsUpdated,
+      skipped,
+    });
   } finally {
     await prisma.$disconnect();
   }

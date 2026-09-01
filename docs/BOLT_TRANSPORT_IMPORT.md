@@ -29,7 +29,7 @@ Do **not** commit real customer PII. The repo only keeps `import-data/.gitkeep`.
    - `customers.csv`
    - `shipments.csv`
    - `quotes.csv` (optional)
-3. If `clinic_accounts.csv`, `clinic_orders.csv`, or `employees.csv` are in that folder, the CLI **skips them and logs** — clinic/employee data is out of freight staging scope.
+3. If `clinic_accounts.csv`, `clinic_orders.csv`, other `clinic_*.csv`, or `employees.csv` are in that folder, the CLI **skips the rows, prints counts by file, and leaves the files on disk**. Clinic CSVs are a backup for a later clinics table — this script never deletes or rewrites them.
 
 ```bash
 cp /path/to/bolt-export/customers.csv ./import-data/
@@ -42,10 +42,23 @@ cp /path/to/bolt-export/quotes.csv ./import-data/
 
 | Mode | DB | What happens |
 | --- | --- | --- |
-| `--dry-run` (default) | never written; Prisma is not opened | Parses CSVs, prints planned users/bookings and flags. |
-| `--apply` | upserts only | Creates/updates `User`, `Booking`, `TrackingEvent`. Re-runnable. |
+| `--dry-run` (default) | never written; Prisma is not opened | Parses CSVs, prints planned users/bookings, flags, and a counts block. |
+| `--apply` | upserts only | Creates/updates `User`, `Booking`, `TrackingEvent`. Re-runnable. Same counts block with imported vs upserted. |
 
 `--apply` requires `DATABASE_URL`. Existing invoice fields (`invoiceStatus`, `invoiceRef`, `invoiceUsd`, `paymentProvider`) are **not** overwritten.
+
+Both modes end with a counts block:
+
+```
+=== counts ===
+users                imported=…  upserted=…     # dry-run: imported/upserted=N (no write)
+bookings             imported=…  upserted=…
+clinic_accounts.csv  skipped=…  (file kept for later clinics table)
+clinic_orders.csv    skipped=…  (file kept for later clinics table)
+employees.csv        skipped=…  (file kept)
+```
+
+`imported` = new rows created. `upserted` = existing rows updated. Clinic/employee files are never dropped.
 
 ## Freight map
 
@@ -103,6 +116,6 @@ A quote becomes a `REQUESTED` booking only when it has a usable id/tracking **an
 
 ## Out of scope
 
-- Clinic accounts / clinic orders / employees (logged skip)
+- Clinic accounts / clinic orders / other `clinic_*` / employees (skip + count by file; files kept)
 - Peptide / GLP-1 cargo rows (skipped)
 - Live DNS, Stripe, or merging this PR to `main`
