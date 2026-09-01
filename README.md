@@ -72,6 +72,8 @@ npm start
 3. When Hairson is happy, point `medsteadtransport.com` at this host (see next section). Leave Squarespace on `medsteadgroup.com`.
 4. After DNS cuts over, retire https://go.medsteadtransport.com. Until then Bolt can stay up.
 
+Customer history can be copied later with the one-shot CLI (`npx tsx scripts/import-bolt-transport.ts`, dry-run by default). See [docs/BOLT_TRANSPORT_IMPORT.md](docs/BOLT_TRANSPORT_IMPORT.md). Do not commit real CSVs.
+
 ## Attach `medsteadtransport.com` later (do not change DNS now)
 
 This app does not edit registrar or DNS settings.
